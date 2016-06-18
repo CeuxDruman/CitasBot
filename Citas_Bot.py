@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 import telebot              # Importamos la librer?a
 from telebot import types   # Y los tipos especiales de esta
 #import telegram
