@@ -1,0 +1,5 @@
+﻿# Archivos ignorados para Git
+*
+!cnf.py
+!.gitignore
+!Citas_Bot.py
