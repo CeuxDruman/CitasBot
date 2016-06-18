@@ -1,5 +1,6 @@
 ﻿# Archivos ignorados para Git
 *
+!telebot
 !cnf.py
 !.gitignore
 !Citas_Bot.py
