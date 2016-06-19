@@ -29,16 +29,12 @@ def listener(messages): # Definimos un listener para los mensajes
 bot.set_update_listener(listener) # Indicamos a la librer?a que lo que hemos definido antes se encargar? de los mensajes
 
 # Connect to the database
-try:
-    connection = pymysql.connect(host=cnf.mysql['host'],
-                                 user=cnf.mysql['user'],
-                                 password=cnf.mysql['password'],
-                                 db=cnf.mysql['db'],
-                                 charset=cnf.mysql['charset'],
-                                 cursorclass=pymysql.cursors.DictCursor)
-except:
-    bot.send_message(cnf.admin_id, "¡No puedo conectarme a la BBDD!")
-#    bot.send_message(cnf.admin_id, "|".join(traceback.print_exc(file=sys.stdout)))
+connection = pymysql.connect(host=cnf.mysql['host'],
+                                user=cnf.mysql['user'],
+                                password=cnf.mysql['password'],
+                                db=cnf.mysql['db'],
+                                charset=cnf.mysql['charset'],
+                                cursorclass=pymysql.cursors.DictCursor)
 
 try:
     #with connection.cursor() as cursor:
@@ -175,9 +171,6 @@ try:
     
 
     bot.polling(none_stop=True)       # E iniciamos nuestro bot para que est? atento a los mensajes
-except:
-    bot.send_message(cnf.admin_id, "¡Ha habido un error durante mi ejecución!")
-#    bot.send_message(cnf.admin_id, "|".join(traceback.print_exc(file=sys.stdout)))
 
 finally:
     connection.close()
