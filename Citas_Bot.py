@@ -9,6 +9,7 @@ import pymysql.cursors
 import time
 import re
 import sys
+import traceback
 
 import cnf
 
@@ -36,7 +37,8 @@ try:
                                  charset=cnf.mysql['charset'],
                                  cursorclass=pymysql.cursors.DictCursor)
 except:
-    bot.send_message(cnf.admin_id, "¡No puedo conectarme a la BBDD! Error:\n" + str(sys.exc_info()[0]))
+    bot.send_message(cnf.admin_id, "¡No puedo conectarme a la BBDD!")
+#    bot.send_message(cnf.admin_id, "|".join(traceback.print_exc(file=sys.stdout)))
 
 try:
     #with connection.cursor() as cursor:
@@ -173,6 +175,9 @@ try:
     
 
     bot.polling(none_stop=True)       # E iniciamos nuestro bot para que est? atento a los mensajes
+except:
+    bot.send_message(cnf.admin_id, "¡Ha habido un error durante mi ejecución!")
+#    bot.send_message(cnf.admin_id, "|".join(traceback.print_exc(file=sys.stdout)))
 
 finally:
     connection.close()
