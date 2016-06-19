@@ -8,6 +8,7 @@ import pymysql
 import pymysql.cursors
 import time
 import re
+import sys
 
 import cnf
 
@@ -34,8 +35,8 @@ try:
                                  db=cnf.mysql['db'],
                                  charset=cnf.mysql['charset'],
                                  cursorclass=pymysql.cursors.DictCursor)
-except ValueError:
-    bot.send_message(cnf.admin_id, "¡No puedo conectarme a la BBDD! Error:\n" + ValueError)
+except:
+    bot.send_message(cnf.admin_id, "¡No puedo conectarme a la BBDD! Error:\n" + str(sys.exc_info()[0]))
 
 try:
     #with connection.cursor() as cursor:
@@ -113,7 +114,7 @@ try:
             chat_id = message.chat.id
             text = message.text
 
-            fechaHoy = time.strftime("%d/%m/%Y")
+            fechaHoy = str(time.strftime("%d/%m/%Y"))
 
             #match = re.search('(\d){2}\/(\d){2}\/(\d){4}', text)
 
@@ -123,7 +124,7 @@ try:
             #    bot.send_message(chat_id, "Debes indicar un ID numérico válido, por ejemplo: \"/citasmostrar 6\"")
             #else:
             with connection.cursor() as cursor:
-                sql = "SELECT * FROM `cita` WHERE `dia`="+fechaHoy
+                sql = "SELECT * FROM `cita` WHERE `dia`='"+fechaHoy+"'"
                 cursor.execute(sql)
                 if cursor.rowcount > 0:
                     row = cursor.fetchone()
