@@ -33,30 +33,9 @@ def listener(messages): # Definimos un listener para los mensajes
  
 bot.set_update_listener(listener) # Indicamos a la librer?a que lo que hemos definido antes se encargar? de los mensajes
 
-# Connect to the database
-connection = pymysql.connect(host=cnf.mysql['host'],
-                                user=cnf.mysql['user'],
-                                password=cnf.mysql['password'],
-                                db=cnf.mysql['db'],
-                                charset=cnf.mysql['charset'],
-                                cursorclass=pymysql.cursors.DictCursor)
+connection = None
 
 try:
-    #with connection.cursor() as cursor:
-    #    # Create a new record
-    #    sql = "INSERT INTO `users` (`email`, `password`) VALUES (%s, %s)"
-    #    cursor.execute(sql, ('webmaster@python.org', 'very-secret'))
-
-    ## connection is not autocommit by default. So you must commit to save
-    ## your changes.
-    connection.commit()
-
-    #with connection.cursor() as cursor:
-    #    # Read a single record
-    #    sql = "SELECT `id`, `password` FROM `users` WHERE `email`=%s"
-    #    cursor.execute(sql, ('webmaster@python.org',))
-    #    result = cursor.fetchone()
-    #    print(result)
 
     #session = 0
 
@@ -73,31 +52,6 @@ try:
 				#    "VALUES (" + m.from_user.id + ", " + 0 + ")")
 
     #if session == 1:
-
-    #@bot.message_handler(func=lambda m: str(m.text).startswith('Día:'))
-    #def command_citascrear(message):
-    #    if testing(message):
-    #        chat_id = message.chat.id
-    #        from_id = message.from_user.id
-
-    #        dia = 
-    #        hora = 
-    #        lugar = 
-    #        direccion = 
-    #        interesado = 
-    #        acompanantes = 
-
-    #        sql = ("INSERT INTO cita (dia, hora, motivo, lugar, direccion, interesado, acompanantes, creador, alarmaDia, alarmaHora)"
-				#"VALUES ('" + dia + "', '" + hora + "', '" + motivo + "', '" + lugar + "', '" + direccion + "', '" + interesado + "', '" + acompanantes + "',  '" + from_id + "', false, false)")
-    #        with connection.cursor() as cursor:
-    #            cursor.execute(sql)
-    #            if cursor.connection == True:
-    #                reply = "¡Cita creada!"
-    #            else:
-    #                reply = "¡Ups! Algo ha fallado mientras creaba tu Cita. Inténtalo de nuevo más tarde o avisa a mi creador."
-    #        bot.send_message(chat_id, reply)
-
-    #else:
 
     # Session handler -------------
     cita_dict = {}
@@ -147,6 +101,7 @@ try:
             elif not cita_id.isdigit():
                 bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmostrar 6\"")
             else:
+                database_connection()
                 with connection.cursor() as cursor:
                     sql = "SELECT * FROM `cita` WHERE `id`="+cita_id
                     cursor.execute(sql)
@@ -182,6 +137,7 @@ try:
                         bot.send_message(chat_id, reply,parse_mode="HTML")
                     else:
                         bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>.",parse_mode="HTML")
+                connection.close()
 
     @bot.message_handler(commands=['citashoy'])
     def command_citashoy(message):
@@ -193,6 +149,7 @@ try:
 
             #match = re.search('(\d){2}\/(\d){2}\/(\d){4}', text)
 
+            database_connection()
             with connection.cursor() as cursor:
                 sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaHoy)+"', '%Y-%m-%d')" # CURDATE()
                 cursor.execute(sql)
@@ -229,11 +186,13 @@ try:
                     bot.send_message(chat_id, reply,parse_mode="HTML")
                 else:
                     bot.send_message(chat_id, "No hay ninguna cita programada para hoy.")
+            connection.close()
     
     @bot.message_handler(commands=['citastodas'])
     def command_citastodas(message):
         if testing(message): #and session(message):
             chat_id = message.chat.id
+            database_connection()
             with connection.cursor() as cursor:
                 sql = "SELECT * FROM `cita`"
                 cursor.execute(sql)
@@ -246,6 +205,7 @@ try:
                     bot.send_message(chat_id, reply,parse_mode="HTML")
                 else:
                     bot.send_message(chat_id, "No hay ninguna cita creada.")
+            connection.close()
 
     # ------------------- START: /citascrear ----------------------- #
 
@@ -567,7 +527,7 @@ try:
                     else:
                         sql += "', '" + cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
-                    
+                    database_connection()
                     with connection.cursor() as cursor:
                         cursor.execute(sql)
                         id = cursor.lastrowid
@@ -597,6 +557,7 @@ try:
                         #    del operation_dict[chat_id]
                         #    del cita_dict[chat_id]
                     bot.send_message(chat_id, reply,parse_mode="HTML")
+                    connection.close()
 
                     #if cita.hora is None:
                     #    cita.hora = "<no indicada>"
@@ -658,7 +619,7 @@ try:
                     else:
                         sql += "', '" +  cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
-
+                    database_connection()
                     with connection.cursor() as cursor:
                         cursor.execute(sql)
                         id = cursor.lastrowid
@@ -687,6 +648,7 @@ try:
                         #    del operation_dict[chat_id]
                         #    del cita_dict[chat_id]
                     bot.send_message(chat_id, reply,parse_mode="HTML")
+                    connection.close()
 
                     #bot.send_message(chat_id, "De acuerdo, tu Cita es el día "+cita.dia+" a las "+cita.hora+" en "+cita.lugar+", dirección: "+cita.direccion+" con interesado: "+cita.interesado+" y acompañantes: "+cita.acompanantes)
                     
@@ -733,6 +695,15 @@ try:
             #        else:
             #            reply = "No hemos podido cancelar tu operación, intentalo de nuevo más tarde."
             #    bot.forward_message(chat_id, chat_id, message.id)
+
+    def database_connection():
+        global connection
+        connection = pymysql.connect(host=cnf.mysql['host'],
+                                        user=cnf.mysql['user'],
+                                        password=cnf.mysql['password'],
+                                        db=cnf.mysql['db'],
+                                        charset=cnf.mysql['charset'],
+                                        cursorclass=pymysql.cursors.DictCursor)
 
     def testing(message):
         chat_id = message.chat.id
