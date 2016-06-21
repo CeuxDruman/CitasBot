@@ -121,15 +121,14 @@ try:
             chat_id = message.chat.id
             reply = ("/citashoy: Muestra todas las citas del grupo programadas para el día actual."
 			    "\n\n/citassemana: Muestra todas las citas del grupo programadas para la semana actual."
-				"\n\n/citasfechas: Muestra todas las citas del grupo programadas entre las 2 fechas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
-				"\n\n/citasfecha: Muestra todas las citas del grupo programadas para la fecha indicada. (Ejemplo: \"/citasfecha 12/04/2016\")"
+				"\n\n/citasfechas: Muestra todas las citas del grupo programadas para la fecha dada (Ejemplo: \"/citasfecha 12/04/2016\") o entre las 2 fechas dadas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
 				"\n\n/citastodas: Muestra un resumen de todas las citas del grupo."
 				"\n\n/citasmostrar: Muestra una cita en concreto dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmostrar 1\")"
 				# Personalizar los siguientes comandos para que SOLO lo puedan mostrar los admins.
 				"\n\n/citascrear: Permite crear una nueva cita."
 				"\n\n/citasmodificar: Permite modificar una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmodificar 1\")"
 				"\n\n/citaseliminar: Permite eliminar por completo una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citaseliminar 1\")"
-				"\n\n/citasacompañar: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
+				"\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
 				"\n\nPuedes cancelar operaciones en curso mediante el comando /cancelar ."
                 )
             bot.send_message(chat_id, reply)
