@@ -878,7 +878,7 @@ while True:
                     connection.close()
 
                     if deleted == 0:
-                        reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>."
+                        reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(numeroCita)+"</b>."
                     else:
                         reply = "¡Cita eliminada!"
 
