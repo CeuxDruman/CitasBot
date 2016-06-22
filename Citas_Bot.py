@@ -14,7 +14,7 @@ import datetime
 
 import cnf
 
-testingMode = True # El modo de testing permite que sólo el admin del mismo (admin_id) lo use
+testingMode = False # El modo de testing permite que sólo el admin del mismo (admin_id) lo use mediante chat privado con él
 TOKEN = cnf.TOKEN
  
 bot = telebot.TeleBot(TOKEN) # Creamos un bot con nuestro Token
@@ -27,9 +27,15 @@ def listener(messages): # Definimos un listener para los mensajes
         chat_id = m.chat.id # Anotamos el ID del chat (cada chat tiene uno ?nico)
         from_id = m.from_user.id
         if m.chat.type == "private":
-            print('(' + str(time.strftime('%H:%M')) + ')[' + str(chat_id) + ']: ' + actText)
+            if m.content_type == "text":
+                print('(' + str(time.strftime('%H:%M')) + ')[' + str(chat_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
+            else:
+                print('(' + str(time.strftime('%H:%M')) + ')[' + str(chat_id) + ']: ' + "\""+m.content_type+"\"")
         else:
-            print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + actText)
+            if m.content_type == "text":
+                print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
+            else:
+                print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + "\""+m.content_type+"\"")
  
 bot.set_update_listener(listener) # Indicamos a la librer?a que lo que hemos definido antes se encargar? de los mensajes
 
@@ -127,7 +133,7 @@ try:
                             reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
 						        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
 						        "Hora: " + hora + "\n"
-						        "Motivo: " + row['motivo'] + "\n"
+						        "Motivo: " + row['motivo'] + "\n" # str(row['motivo'].encode('ascii', 'backslashreplace'))
 						        "Lugar: " + row['lugar'] + "\n"
 						        "Dirección: " + direccion + "\n"
 						        "Interesado: " + row['interesado'] + "\n"
@@ -259,8 +265,17 @@ try:
                 dia = message.text
 
                 match = re.search('(\d){2}\/(\d){2}\/(\d){4}', dia)
+
                 if not match:
                     bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
+                    msg = bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
+                    bot.register_next_step_handler(msg, process_dia_step)
+                    return
+
+                match = message.content_type == "text"
+
+                if not match:
+                    bot.reply_to(message, "Eh eh, sólo texto por favor.")
                     msg = bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
                     bot.register_next_step_handler(msg, process_dia_step)
                     return
@@ -292,6 +307,14 @@ try:
                     
                     if not match:
                         bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
+                        bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_hora_step)
+                        return
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
                         bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
                         bot.register_next_step_handler(message, process_hora_step)
                         return
@@ -335,22 +358,20 @@ try:
                     bot.register_next_step_handler(message, process_motivo_step)
                     return
 
+                match = message.content_type == "text"
+
+                if not match:
+                    bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                    bot.send_message(chat_id, '¿Cuál es el <b>motivo</b>?',parse_mode="HTML")
+                    bot.register_next_step_handler(message, process_motivo_step)
+                    return
+
                 cita = cita_dict[chat_id]
                 cita.motivo = motivo
 
                 msg = bot.reply_to(message, '¿En qué <b>lugar</b>?',parse_mode="HTML")
                 bot.register_next_step_handler(msg, process_lugar_step)
-                #dia = cita.dia
 
-                #hora = cita.hora
-                #if hora is None:
-                #    hora = ""
-
-                #motivo = cita.motivo
-
-                #bot.send_message(chat_id, "De acuerdo, tu Cita es el día "+dia+" a las "+hora+" con el motivo \""+motivo+"\"")
-                #del operation_dict[chat_id]
-                #del cita_dict[chat_id]
             else:
                 return
 
@@ -359,7 +380,7 @@ try:
                 del operation_dict[chat_id]
                 if chat_id in cita_dict:
                     del cita_dict[chat_id]
-            bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+            bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')# + '\n'+str(e))
 
     def process_lugar_step(message):
         try:
@@ -372,6 +393,14 @@ try:
 
                 if not match:
                     bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
+                    bot.send_message(chat_id, '¿En qué <b>lugar</b>?',parse_mode="HTML")
+                    bot.register_next_step_handler(message, process_lugar_step)
+                    return
+
+                match = message.content_type == "text"
+
+                if not match:
+                    bot.reply_to(message, "Eh eh, sólo texto por favor.")
                     bot.send_message(chat_id, '¿En qué <b>lugar</b>?',parse_mode="HTML")
                     bot.register_next_step_handler(message, process_lugar_step)
                     return
@@ -404,6 +433,14 @@ try:
 
                     if not match:
                         bot.reply_to(message, "El lugar no puede ser mayor de 100 caracteres.")
+                        bot.send_message(chat_id, '¿Cuál es la <b>dirección</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_direccion_step)
+                        return
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
                         bot.send_message(chat_id, '¿Cuál es la <b>dirección</b>? /saltar',parse_mode="HTML")
                         bot.register_next_step_handler(message, process_direccion_step)
                         return
@@ -443,6 +480,14 @@ try:
 
                     if not match:
                         bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_interesado_step)
+                        return
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
                         bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
                         bot.register_next_step_handler(message, process_interesado_step)
                         return
@@ -489,8 +534,31 @@ try:
                         bot.register_next_step_handler(message, process_acompanantes_step)
                         return
 
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_acompanantes_step)
+                        return
+
                     cita = cita_dict[chat_id]
                     cita.acompanantes = acompanantes
+
+                    if not isinstance(cita.motivo, str):
+                        cita.motivo = cita.motivo.decode('utf-8')
+
+                    if not isinstance(cita.lugar, str):
+                        cita.motivo = cita.lugar.decode('utf-8')
+
+                    if not isinstance(cita.direccion, str):
+                        cita.motivo = cita.direccion.decode('utf-8')
+
+                    if not isinstance(cita.interesado, str):
+                        cita.motivo = cita.interesado.decode('utf-8')
+
+                    if not isinstance(cita.acompanantes, str):
+                        cita.motivo = cita.acompanantes.decode('utf-8')
 
                     sql = "INSERT INTO cita (dia, "
                     
@@ -533,56 +601,31 @@ try:
                         id = cursor.lastrowid
                         connection.commit()
 
-                        #if cursor.connection == True:
-
-                        #    with connection.cursor() as cursor:
-                                #sql = "SELECT * FROM `cita` WHERE `creador`="+str(from_id)+" ORDER BY `id` DESC LIMIT 1"
-                                #cursor.execute(sql)
-                                #if cursor.rowcount > 0:
-                                #    row = cursor.fetchone()
-                                #    while(row):
-                                #        id = str(row['id'])
-                                #        row = cursor.fetchone()
-                                #else:
-                                #    reply = "¡Ups! Algo ha fallado mientras creaba tu Cita"+u"\U0001F605 Inténtalo de nuevo más tarde o avisa a mi creador."
-                                #    del operation_dict[chat_id]
-                                #    del cita_dict[chat_id]
-                                
-
                         reply = "¡Hecho!, tu Cita se ha creado con el \"Número de cita\" <b>"+str(id)+"</b>"
                         del operation_dict[chat_id]
                         del cita_dict[chat_id]
-                        #else:
-                        #    reply = "¡Ups! Algo ha fallado mientras creaba tu Cita"+u"\U0001F605 Inténtalo de nuevo más tarde o avisa a mi creador."
-                        #    del operation_dict[chat_id]
-                        #    del cita_dict[chat_id]
+
                     bot.send_message(chat_id, reply,parse_mode="HTML")
                     connection.close()
-
-                    #if cita.hora is None:
-                    #    cita.hora = "<no indicada>"
-                    #if cita.direccion is None:
-                    #    cita.direccion = "<no indicada>"
-                    #if cita.acompanantes is None:
-                    #    cita.acompanantes = "<no indicados>"
-
-                    #bot.send_message(chat_id, "De acuerdo, tu Cita es el día "+cita.dia+" a las "+cita.hora+" en "+cita.lugar+", dirección: "+cita.direccion+" con interesado: "+cita.interesado+" y acompañantes: "+cita.acompanantes)
-                    #del operation_dict[chat_id]
-                    #del cita_dict[chat_id]
 
                 else:
 
                     cita = cita_dict[chat_id]
 
-                    #msg = bot.reply_to(message, '¿Cuál es el <b>motivo</b>?',parse_mode="HTML")
-                    #bot.register_next_step_handler(msg, process_motivo_step)
+                    if not isinstance(cita.motivo, str):
+                        cita.motivo = cita.motivo.decode('utf-8')
 
-                    #if cita.hora is None:
-                    #    cita.hora = "<no indicada>"
-                    #if cita.direccion is None:
-                    #    cita.direccion = "<no indicada>"
-                    #if cita.acompanantes is None:
-                    #    cita.acompanantes = "<no indicados>"
+                    if not isinstance(cita.lugar, str):
+                        cita.motivo = cita.lugar.decode('utf-8')
+
+                    if not isinstance(cita.direccion, str):
+                        cita.motivo = cita.direccion.decode('utf-8')
+
+                    if not isinstance(cita.interesado, str):
+                        cita.motivo = cita.interesado.decode('utf-8')
+
+                    if not isinstance(cita.acompanantes, str):
+                        cita.motivo = cita.acompanantes.decode('utf-8')
 
                     sql = "INSERT INTO cita (dia, "
                     
@@ -605,9 +648,9 @@ try:
 
 
                     if cita.hora is None:
-                        sql += "', '" +  cita.motivo + "', '" +  cita.lugar
+                        sql += "', '" + cita.motivo + "', '" +  cita.lugar
                     else:
-                        sql += "', '" +  cita.hora + "', '" +  cita.motivo + "', '" +  cita.lugar
+                        sql += "', '" +  cita.hora + "', '" + cita.motivo + "', '" +  cita.lugar
 
                     if cita.direccion is None:
                         sql += "', '" +  cita.interesado
@@ -625,32 +668,12 @@ try:
                         id = cursor.lastrowid
                         connection.commit()
 
-                        #if cursor.connection == True:
-
-                        #    with connection.cursor() as cursor:
-                        #        sql = "SELECT * FROM `cita` WHERE `creador`="+str(from_id)+" ORDER BY `id` DESC LIMIT 1"
-                        #        cursor.execute(sql)
-                        #        if cursor.rowcount > 0:
-                        #            row = cursor.fetchone()
-                        #            while(row):
-                        #                id = str(row['id'])
-                        #                row = cursor.fetchone()
-                        #        else:
-                        #            reply = "¡Ups! Algo ha fallado mientras creaba tu Cita "+u"\U0001F605 Inténtalo de nuevo más tarde o avisa a mi creador."
-                        #            del operation_dict[chat_id]
-                        #            del cita_dict[chat_id]
-
                         reply = "¡Hecho!, tu Cita se ha creado con el \"Número de cita\" <b>"+str(id)+"</b>"
                         del operation_dict[chat_id]
                         del cita_dict[chat_id]
-                        #else:
-                        #    reply = "¡Ups! Algo ha fallado mientras creaba tu Cita "+u"\U0001F605 Inténtalo de nuevo más tarde o avisa a mi creador."
-                        #    del operation_dict[chat_id]
-                        #    del cita_dict[chat_id]
+
                     bot.send_message(chat_id, reply,parse_mode="HTML")
                     connection.close()
-
-                    #bot.send_message(chat_id, "De acuerdo, tu Cita es el día "+cita.dia+" a las "+cita.hora+" en "+cita.lugar+", dirección: "+cita.direccion+" con interesado: "+cita.interesado+" y acompañantes: "+cita.acompanantes)
                     
             else:
                 return
@@ -660,7 +683,7 @@ try:
                 del operation_dict[chat_id]
                 if chat_id in cita_dict:
                     del cita_dict[chat_id]
-            bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+            bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')#\n'+str(e)+"\nQuery: "+sql)
 
     # ------------------- END: /citascrear ----------------------- #
 
@@ -675,6 +698,19 @@ try:
                 if chat_id in cita_dict:
                     del cita_dict[chat_id]
                 bot.send_message(chat_id, "Operación cancelada.")
+
+    @bot.message_handler(commands=['testingmode'])
+    def command_citastodas(message):
+        from_id = message.from_user.id
+        if from_id == cnf.admin_id:
+            chat_id = message.chat.id
+            global testingMode
+            if testingMode == True:
+                testingMode = False
+                bot.send_message(cnf.admin_id, 'testingMode DESACTIVADO '+u'\U0000274E')#\n'+str(e))
+            else:
+                testingMode = True
+                bot.send_message(cnf.admin_id, 'testingMode ACTIVADO '+u'\U00002705')#\n'+str(e))
 
 
             #session = 0
@@ -760,4 +796,6 @@ except Exception as e:
     bot.send_message(cnf.admin_id, '¡Me he caído! '+u'\U0001F631\n'+str(e))
 
 finally:
-    connection.close()
+    if connection is not None:
+        if connection.open:
+            connection.close()
