@@ -95,26 +95,78 @@ try:
     
     @bot.message_handler(commands=['citasmostrar'])
     def command_citasmostrar(message):
-        if testing(message): #and session(message):
-            chat_id = message.chat.id
-            text = message.text
-            cita_id = text.replace("/citasmostrar@Citas_Bot", "")
-            cita_id = cita_id.replace("/citasmostrar", "")
-            cita_id = cita_id.replace(" ", "")
+        try:
+            if testing(message): #and session(message):
+                chat_id = message.chat.id
+                text = message.text
+                cita_id = text.replace("/citasmostrar@Citas_Bot", "")
+                cita_id = cita_id.replace("/citasmostrar", "")
+                cita_id = cita_id.replace(" ", "")
 
-            if cita_id == "":
-                bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres mostrar, por ejemplo: \"/citasmostrar 6\"")
-            elif not cita_id.isdigit():
-                bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmostrar 6\"")
-            else:
+                if cita_id == "":
+                    bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres mostrar, por ejemplo: \"/citasmostrar 6\"")
+                elif not cita_id.isdigit():
+                    bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmostrar 6\"")
+                else:
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        sql = "SELECT * FROM `cita` WHERE `id`="+cita_id
+                        cursor.execute(sql)
+                        if cursor.rowcount > 0:
+                            row = cursor.fetchone()
+                            while(row):
+
+                                if row['hora'] is None:
+                                    hora = ""
+                                else:
+                                    hora = str(row['hora'])[:5]
+
+                                if row['direccion'] is None:
+                                    direccion = ""
+                                else:
+                                    direccion = str(row['direccion'])
+
+                                if row['acompanantes'] is None:
+                                    acompanantes = ""
+                                else:
+                                    acompanantes = str(row['acompanantes'])
+
+                                reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						            "Hora: " + hora + "\n"
+						            "Motivo: " + row['motivo'] + "\n"
+						            "Lugar: " + row['lugar'] + "\n"
+						            "Dirección: " + direccion + "\n"
+						            "Interesado: " + row['interesado'] + "\n"
+						            "Acompañantes: " + acompanantes + "\n"
+                                    )
+                                row = cursor.fetchone()
+                            bot.send_message(chat_id, reply,parse_mode="HTML")
+                        else:
+                            bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>.",parse_mode="HTML")
+                    connection.close()
+        except Exception as e:
+            bot.reply_to(message, 'Algo ha salido mal al recuperar tu cita '+u'\U0001F605' + 'Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+
+    @bot.message_handler(commands=['citashoy'])
+    def command_citashoy(message):
+        try:
+            if testing(message): #and session(message):
+                chat_id = message.chat.id
+                text = message.text
+
+                fechaHoy = time.strftime('%Y-%m-%d')
+
+                #match = re.search('(\d){2}\/(\d){2}\/(\d){4}', text)
+
                 database_connection()
                 with connection.cursor() as cursor:
-                    sql = "SELECT * FROM `cita` WHERE `id`="+cita_id
+                    sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaHoy)+"', '%Y-%m-%d')" # CURDATE()
                     cursor.execute(sql)
                     if cursor.rowcount > 0:
                         row = cursor.fetchone()
+                        reply = "Citas programadas para hoy:\n"
                         while(row):
-
                             if row['hora'] is None:
                                 hora = ""
                             else:
@@ -130,7 +182,8 @@ try:
                             else:
                                 acompanantes = str(row['acompanantes'])
 
-                            reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+                            reply += "----------------------\n"
+                            reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
 						        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
 						        "Hora: " + hora + "\n"
 						        "Motivo: " + row['motivo'] + "\n"
@@ -142,76 +195,32 @@ try:
                             row = cursor.fetchone()
                         bot.send_message(chat_id, reply,parse_mode="HTML")
                     else:
-                        bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>.",parse_mode="HTML")
+                        bot.send_message(chat_id, "No hay ninguna cita programada para hoy.")
                 connection.close()
-
-    @bot.message_handler(commands=['citashoy'])
-    def command_citashoy(message):
-        if testing(message): #and session(message):
-            chat_id = message.chat.id
-            text = message.text
-
-            fechaHoy = time.strftime('%Y-%m-%d')
-
-            #match = re.search('(\d){2}\/(\d){2}\/(\d){4}', text)
-
-            database_connection()
-            with connection.cursor() as cursor:
-                sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaHoy)+"', '%Y-%m-%d')" # CURDATE()
-                cursor.execute(sql)
-                if cursor.rowcount > 0:
-                    row = cursor.fetchone()
-                    reply = "Citas programadas para hoy:\n"
-                    while(row):
-                        if row['hora'] is None:
-                            hora = ""
-                        else:
-                            hora = str(row['hora'])[:5]
-
-                        if row['direccion'] is None:
-                            direccion = ""
-                        else:
-                            direccion = str(row['direccion'])
-
-                        if row['acompanantes'] is None:
-                            acompanantes = ""
-                        else:
-                            acompanantes = str(row['acompanantes'])
-
-                        reply += "----------------------\n"
-                        reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						    "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						    "Hora: " + hora + "\n"
-						    "Motivo: " + row['motivo'] + "\n"
-						    "Lugar: " + row['lugar'] + "\n"
-						    "Dirección: " + direccion + "\n"
-						    "Interesado: " + row['interesado'] + "\n"
-						    "Acompañantes: " + acompanantes + "\n"
-                            )
-                        row = cursor.fetchone()
-                    bot.send_message(chat_id, reply,parse_mode="HTML")
-                else:
-                    bot.send_message(chat_id, "No hay ninguna cita programada para hoy.")
-            connection.close()
+        except Exception as e:
+            bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + 'Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
     
     @bot.message_handler(commands=['citastodas'])
     def command_citastodas(message):
-        if testing(message): #and session(message):
-            chat_id = message.chat.id
-            database_connection()
-            with connection.cursor() as cursor:
-                sql = "SELECT * FROM `cita`"
-                cursor.execute(sql)
-                if cursor.rowcount > 0:
-                    reply = "Resumen de todas las citas:\n"
-                    row = cursor.fetchone()
-                    while(row):
-                        reply += "[<b>" + str(row['id']) + "</b>](" + row['dia'].strftime("%d/%m/%Y") + ") " + row['motivo'] + "\n"
+        try:
+            if testing(message): #and session(message):
+                chat_id = message.chat.id
+                database_connection()
+                with connection.cursor() as cursor:
+                    sql = "SELECT * FROM `cita`"
+                    cursor.execute(sql)
+                    if cursor.rowcount > 0:
+                        reply = "Resumen de todas las citas:\n"
                         row = cursor.fetchone()
-                    bot.send_message(chat_id, reply,parse_mode="HTML")
-                else:
-                    bot.send_message(chat_id, "No hay ninguna cita creada.")
-            connection.close()
+                        while(row):
+                            reply += "[<b>" + str(row['id']) + "</b>](" + row['dia'].strftime("%d/%m/%Y") + ") " + row['motivo'] + "\n"
+                            row = cursor.fetchone()
+                        bot.send_message(chat_id, reply,parse_mode="HTML")
+                    else:
+                        bot.send_message(chat_id, "No hay ninguna cita creada.")
+                connection.close()
+        except Exception as e:
+            bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + 'Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
 
     # ------------------- START: /citascrear ----------------------- #
 
@@ -549,16 +558,10 @@ try:
                         cita.motivo = cita.motivo.decode('utf-8')
 
                     if not isinstance(cita.lugar, str):
-                        cita.motivo = cita.lugar.decode('utf-8')
-
-                    if not isinstance(cita.direccion, str):
-                        cita.motivo = cita.direccion.decode('utf-8')
+                        cita.lugar = cita.lugar.decode('utf-8')
 
                     if not isinstance(cita.interesado, str):
-                        cita.motivo = cita.interesado.decode('utf-8')
-
-                    if not isinstance(cita.acompanantes, str):
-                        cita.motivo = cita.acompanantes.decode('utf-8')
+                        cita.interesado = cita.interesado.decode('utf-8')
 
                     sql = "INSERT INTO cita (dia, "
                     
@@ -588,11 +591,15 @@ try:
                     if cita.direccion is None:
                         sql += "', '" + cita.interesado
                     else:
+                        if not isinstance(cita.direccion, str):
+                            cita.direccion = cita.direccion.decode('utf-8')
                         sql += "', '" + cita.direccion + "', '" + cita.interesado
 
                     if cita.acompanantes is None:
                         sql += "',  '" + str(from_id) + "', false, false)"
                     else:
+                        if not isinstance(cita.acompanantes, str):
+                            cita.acompanantes = cita.acompanantes.decode('utf-8')
                         sql += "', '" + cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
                     database_connection()
@@ -616,16 +623,10 @@ try:
                         cita.motivo = cita.motivo.decode('utf-8')
 
                     if not isinstance(cita.lugar, str):
-                        cita.motivo = cita.lugar.decode('utf-8')
-
-                    if not isinstance(cita.direccion, str):
-                        cita.motivo = cita.direccion.decode('utf-8')
+                        cita.lugar = cita.lugar.decode('utf-8')
 
                     if not isinstance(cita.interesado, str):
-                        cita.motivo = cita.interesado.decode('utf-8')
-
-                    if not isinstance(cita.acompanantes, str):
-                        cita.motivo = cita.acompanantes.decode('utf-8')
+                        cita.interesado = cita.interesado.decode('utf-8')
 
                     sql = "INSERT INTO cita (dia, "
                     
@@ -655,11 +656,15 @@ try:
                     if cita.direccion is None:
                         sql += "', '" +  cita.interesado
                     else:
+                        if not isinstance(cita.direccion, str):
+                            cita.direccion = cita.direccion.decode('utf-8')
                         sql += "', '" +  cita.direccion + "', '" +  cita.interesado
 
                     if cita.acompanantes is None:
                         sql += "',  '" + str(from_id) + "', false, false)"
                     else:
+                        if not isinstance(cita.acompanantes, str):
+                            cita.acompanantes = cita.acompanantes.decode('utf-8')
                         sql += "', '" +  cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
                     database_connection()
@@ -689,33 +694,36 @@ try:
 
     @bot.message_handler(commands=['citaseliminar'])
     def command_citasmostrar(message):
-        if testing(message):
-            chat_id = message.chat.id
-            text = message.text
-            cita_id = text.replace("/citaseliminar@Citas_Bot", "")
-            cita_id = cita_id.replace("/citaseliminar", "")
-            cita_id = cita_id.replace(" ", "")
+        try:
+            if testing(message):
+                chat_id = message.chat.id
+                text = message.text
+                cita_id = text.replace("/citaseliminar@Citas_Bot", "")
+                cita_id = cita_id.replace("/citaseliminar", "")
+                cita_id = cita_id.replace(" ", "")
 
-            if cita_id == "":
-                bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres eliminar, por ejemplo: \"/citaseliminar 6\"")
-            elif not cita_id.isdigit():
-                bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
-            else:
-                sql = "DELETE FROM cita WHERE id=" + cita_id
-
-                database_connection()
-                with connection.cursor() as cursor:
-                    cursor.execute(sql)
-                    deleted = cursor.rowcount # SELECT ROW_COUNT()
-                    connection.commit()
-                connection.close()
-
-                if deleted == 0:
-                    reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>."
+                if cita_id == "":
+                    bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres eliminar, por ejemplo: \"/citaseliminar 6\"")
+                elif not cita_id.isdigit():
+                    bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
                 else:
-                    reply = "¡Cita eliminada!"
+                    sql = "DELETE FROM cita WHERE id=" + cita_id
 
-                bot.send_message(chat_id, reply,parse_mode="HTML")
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        cursor.execute(sql)
+                        deleted = cursor.rowcount # SELECT ROW_COUNT()
+                        connection.commit()
+                    connection.close()
+
+                    if deleted == 0:
+                        reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>."
+                    else:
+                        reply = "¡Cita eliminada!"
+
+                    bot.send_message(chat_id, reply,parse_mode="HTML")
+        except Exception as e:
+            bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + 'Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
 
     @bot.message_handler(commands=['cancelar'])
     def command_cancelar(message):
