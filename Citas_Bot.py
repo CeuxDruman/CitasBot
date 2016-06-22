@@ -113,7 +113,22 @@ while True:
                     cita_id = cita_id.replace(" ", "")
 
                     if cita_id == "":
-                        bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres mostrar, por ejemplo: \"/citasmostrar 6\"")
+                        
+                        msg = bot.reply_to(message, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+
+                        operation_dict[chat_id] = time.time()
+
+                        bot.register_next_step_handler(msg, process_mostrar_step)
+
+                        # Si al minuto no ha terminado la operación, la cancelamos y borramos los elementos de memoria
+                        while chat_id in operation_dict:
+                            if time.time() - operation_dict[chat_id] > 60:
+                                if chat_id in operation_dict:
+                                    del operation_dict[chat_id]
+                                bot.reply_to(message, "Operación cancelada.")
+                                break
+                            #time.sleep(1)
+
                     elif not cita_id.isdigit():
                         bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmostrar 6\"")
                     else:
@@ -156,6 +171,76 @@ while True:
                         connection.close()
             except Exception as e:
                 bot.reply_to(message, 'Algo ha salido mal al recuperar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+
+        def process_mostrar_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    numeroCita = message.text
+
+                    match = numeroCita.isdigit()
+
+                    if not match:
+                        bot.reply_to(message, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: <b>6</b>",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_mostrar_step)
+                        return
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_mostrar_step)
+                        return
+                    if chat_id in operation_dict:
+                        del operation_dict[chat_id]
+
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        sql = "SELECT * FROM `cita` WHERE `id`="+numeroCita
+                        cursor.execute(sql)
+                        if cursor.rowcount > 0:
+                            row = cursor.fetchone()
+                            while(row):
+
+                                if row['hora'] is None:
+                                    hora = ""
+                                else:
+                                    hora = str(row['hora'])[:5]
+
+                                if row['direccion'] is None:
+                                    direccion = ""
+                                else:
+                                    direccion = str(row['direccion'])
+
+                                if row['acompanantes'] is None:
+                                    acompanantes = ""
+                                else:
+                                    acompanantes = str(row['acompanantes'])
+
+                                reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						            "Hora: " + hora + "\n"
+						            "Motivo: " + row['motivo'] + "\n"
+						            "Lugar: " + row['lugar'] + "\n"
+						            "Dirección: " + direccion + "\n"
+						            "Interesado: " + row['interesado'] + "\n"
+						            "Acompañantes: " + acompanantes + "\n"
+                                    )
+                                row = cursor.fetchone()
+                            bot.send_message(chat_id, reply,parse_mode="HTML")
+                        else:
+                            bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+numeroCita+"</b>.",parse_mode="HTML")
+                    connection.close()
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador. \n'+str(e))
 
         @bot.message_handler(commands=['citashoy'])
         def command_citashoy(message):
@@ -261,11 +346,13 @@ while True:
                     #try:
                     while chat_id in operation_dict:
                         if time.time() - operation_dict[chat_id] > 360:
-                            del operation_dict[chat_id]
-                            del cita_dict[chat_id]
+                            if chat_id in operation_dict:
+                                del operation_dict[chat_id]
+                            if chat_id in cita_dict:
+                                del cita_dict[chat_id]
                             bot.reply_to(message, "Operación cancelada.")
                             break
-                        time.sleep(1)
+                        #time.sleep(1)
                     #except Exception as e:
                     #    pass
             except Exception as e:
@@ -492,37 +579,37 @@ while True:
                 
                     interesado = message.text
 
-                    if interesado != "/yo":
+                    #if interesado != "/yo":
 
-                        match = len(interesado) <= 45
+                    match = len(interesado) <= 45
 
-                        if not match:
-                            bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
-                            bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
-                            bot.register_next_step_handler(message, process_interesado_step)
-                            return
+                    if not match:
+                        bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_interesado_step)
+                        return
 
-                        match = message.content_type == "text"
+                    match = message.content_type == "text"
 
-                        if not match:
-                            bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                            bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
-                            bot.register_next_step_handler(message, process_interesado_step)
-                            return
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_interesado_step)
+                        return
 
-                        cita = cita_dict[chat_id]
-                        cita.interesado = interesado
+                    cita = cita_dict[chat_id]
+                    cita.interesado = interesado
 
-                        msg = bot.reply_to(message, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_acompanantes_step)
+                    msg = bot.reply_to(message, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
+                    bot.register_next_step_handler(msg, process_acompanantes_step)
 
-                    else:
+                    #else:
 
-                        cita = cita_dict[chat_id]
-                        cita.interesado = "@" + from_username
+                    #    cita = cita_dict[chat_id]
+                    #    cita.interesado = "@" + from_username
 
-                        msg = bot.reply_to(message, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_acompanantes_step)
+                    #    msg = bot.reply_to(message, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
+                    #    bot.register_next_step_handler(msg, process_acompanantes_step)
 
                 else:
                     return
@@ -611,6 +698,11 @@ while True:
                                 cita.acompanantes = cita.acompanantes.decode('utf-8')
                             sql += "', '" + cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
+                        if chat_id in operation_dict:
+                            del operation_dict[chat_id]
+                        if chat_id in cita_dict:
+                            del cita_dict[chat_id]
+
                         database_connection()
                         with connection.cursor() as cursor:
                             cursor.execute(sql)
@@ -618,8 +710,6 @@ while True:
                             connection.commit()
 
                             reply = "¡Hecho!, tu Cita se ha creado con el \"Número de cita\" <b>"+str(id)+"</b>"
-                            del operation_dict[chat_id]
-                            del cita_dict[chat_id]
 
                         bot.send_message(chat_id, reply,parse_mode="HTML")
                         connection.close()
@@ -676,6 +766,11 @@ while True:
                                 cita.acompanantes = cita.acompanantes.decode('utf-8')
                             sql += "', '" +  cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
 
+                        if chat_id in operation_dict:
+                            del operation_dict[chat_id]
+                        if chat_id in cita_dict:
+                            del cita_dict[chat_id]
+
                         database_connection()
                         with connection.cursor() as cursor:
                             cursor.execute(sql)
@@ -683,8 +778,6 @@ while True:
                             connection.commit()
 
                             reply = "¡Hecho!, tu Cita se ha creado con el \"Número de cita\" <b>"+str(id)+"</b>"
-                            del operation_dict[chat_id]
-                            del cita_dict[chat_id]
 
                         bot.send_message(chat_id, reply,parse_mode="HTML")
                         connection.close()
@@ -697,7 +790,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')#\n'+str(e)+"\nQuery: "+sql)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')#\n'+str(e)+"\nQuery: "+sql)
 
         # ------------------- END: /citascrear ----------------------- #
 
@@ -712,7 +805,22 @@ while True:
                     cita_id = cita_id.replace(" ", "")
 
                     if cita_id == "":
-                        bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres eliminar, por ejemplo: \"/citaseliminar 6\"")
+                        
+                        msg = bot.reply_to(message, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+
+                        operation_dict[chat_id] = time.time()
+
+                        bot.register_next_step_handler(msg, process_eliminar_step)
+
+                        # Si al minuto no ha terminado la operación, la cancelamos y borramos los elementos de memoria
+                        while chat_id in operation_dict:
+                            if time.time() - operation_dict[chat_id] > 60:
+                                if chat_id in operation_dict:
+                                    del operation_dict[chat_id]
+                                bot.reply_to(message, "Operación cancelada.")
+                                break
+                            #time.sleep(1)
+
                     elif not cita_id.isdigit():
                         bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
                     else:
@@ -733,6 +841,55 @@ while True:
                         bot.send_message(chat_id, reply,parse_mode="HTML")
             except Exception as e:
                 bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+
+        def process_eliminar_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    numeroCita = message.text
+
+                    match = numeroCita.isdigit()
+
+                    if not match:
+                        bot.reply_to(message, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: <b>6</b>",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_eliminar_step)
+                        return
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_eliminar_step)
+                        return
+
+                    if chat_id in operation_dict:
+                        del operation_dict[chat_id]
+
+                    sql = "DELETE FROM cita WHERE id=" + numeroCita
+
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        cursor.execute(sql)
+                        deleted = cursor.rowcount # SELECT ROW_COUNT()
+                        connection.commit()
+                    connection.close()
+
+                    if deleted == 0:
+                        reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>."
+                    else:
+                        reply = "¡Cita eliminada!"
+
+                    bot.send_message(chat_id, reply,parse_mode="HTML")
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador. \n'+str(e))
 
         @bot.message_handler(commands=['cancelar'])
         def command_cancelar(message):
