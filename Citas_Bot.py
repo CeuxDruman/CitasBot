@@ -687,6 +687,36 @@ try:
 
     # ------------------- END: /citascrear ----------------------- #
 
+    @bot.message_handler(commands=['citaseliminar'])
+    def command_citasmostrar(message):
+        if testing(message):
+            chat_id = message.chat.id
+            text = message.text
+            cita_id = text.replace("/citaseliminar@Citas_Bot", "")
+            cita_id = cita_id.replace("/citaseliminar", "")
+            cita_id = cita_id.replace(" ", "")
+
+            if cita_id == "":
+                bot.send_message(chat_id, "Debes indicar el \"Número de cita\" de la cita que quieres eliminar, por ejemplo: \"/citaseliminar 6\"")
+            elif not cita_id.isdigit():
+                bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
+            else:
+                sql = "DELETE FROM cita WHERE id=" + cita_id
+
+                database_connection()
+                with connection.cursor() as cursor:
+                    cursor.execute(sql)
+                    deleted = cursor.rowcount # SELECT ROW_COUNT()
+                    connection.commit()
+                connection.close()
+
+                if deleted == 0:
+                    reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>."
+                else:
+                    reply = "¡Cita eliminada!"
+
+                bot.send_message(chat_id, reply,parse_mode="HTML")
+
     @bot.message_handler(commands=['cancelar'])
     def command_cancelar(message):
         if testing(message): #and session(message):
