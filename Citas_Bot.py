@@ -133,7 +133,7 @@ try:
                             reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
 						        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
 						        "Hora: " + hora + "\n"
-						        "Motivo: " + row['motivo'] + "\n" # str(row['motivo'].encode('ascii', 'backslashreplace'))
+						        "Motivo: " + row['motivo'] + "\n"
 						        "Lugar: " + row['lugar'] + "\n"
 						        "Dirección: " + direccion + "\n"
 						        "Interesado: " + row['interesado'] + "\n"

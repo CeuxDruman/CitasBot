@@ -17,3 +17,25 @@ This Telegram Bot will let group admins create, modify, delete, etc... any kind 
 ## Features currently in development
 * __1 day before notification__: Users will receive a notification reminding they have a meeting the next day.
 * __1 hour before notification__: Users will receive a notification reminding they have a meeting in one hour.
+
+
+## How to deal with Emojis and strange characters in MySQL
+You need to make some modifications in your MySQL database in order to deal especially with Emojis (but also with some special characters).
+
+Basically, you have to change your tables and columns charset to "utf-8", as we configured on our python Bot, in the columns that have free text entry:
+```
+ALTER TABLE cita charset=utf8mb4,
+MODIFY COLUMN motivo VARCHAR(45) CHARACTER SET utf8mb4 NOT NULL,
+MODIFY COLUMN lugar VARCHAR(50) CHARACTER SET utf8mb4 NOT NULL,
+MODIFY COLUMN direccion VARCHAR(100) CHARACTER SET utf8mb4,
+MODIFY COLUMN interesado VARCHAR(45) CHARACTER SET utf8mb4 NOT NULL,
+MODIFY COLUMN acompanantes VARCHAR(100) CHARACTER SET utf8mb4;
+```
+
+But this is not all, make sure in your python Bot you decode your "message text" before inserting it into the database, just in case your message isn't completely a string:
+```
+if not isinstance(cita.motivo, str):
+	cita.motivo = cita.motivo.decode('utf-8')
+```
+
+You don't have to take any special care when retrieving your data from the database.
