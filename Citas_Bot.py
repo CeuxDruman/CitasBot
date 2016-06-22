@@ -240,7 +240,7 @@ while True:
             except Exception as e:
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador. \n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
 
         @bot.message_handler(commands=['citashoy'])
         def command_citashoy(message):
@@ -343,18 +343,18 @@ while True:
                     bot.register_next_step_handler(msg, process_dia_step)
 
                     # Si a los 5 minutos no ha terminado la operación, la cancelamos y borramos los elementos de memoria
-                    #try:
-                    while chat_id in operation_dict:
-                        if time.time() - operation_dict[chat_id] > 360:
-                            if chat_id in operation_dict:
-                                del operation_dict[chat_id]
-                            if chat_id in cita_dict:
-                                del cita_dict[chat_id]
-                            bot.reply_to(message, "Operación cancelada.")
-                            break
-                        #time.sleep(1)
-                    #except Exception as e:
-                    #    pass
+                    try:
+                        while chat_id in operation_dict:
+                            if time.time() - operation_dict[chat_id] > 360:
+                                if chat_id in operation_dict:
+                                    del operation_dict[chat_id]
+                                if chat_id in cita_dict:
+                                    del cita_dict[chat_id]
+                                bot.reply_to(message, "Operación cancelada.")
+                                break
+                            #time.sleep(1)
+                    except Exception as e:
+                        pass
             except Exception as e:
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
@@ -553,12 +553,12 @@ while True:
                         cita = cita_dict[chat_id]
                         cita.direccion = direccion
 
-                        msg = bot.reply_to(message, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        msg = bot.reply_to(message, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
                         bot.register_next_step_handler(msg, process_interesado_step)
 
                     else:
 
-                        msg = bot.reply_to(message, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        msg = bot.reply_to(message, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
                         bot.register_next_step_handler(msg, process_interesado_step)
 
                 else:
@@ -585,7 +585,7 @@ while True:
 
                     if not match:
                         bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
-                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
                         bot.register_next_step_handler(message, process_interesado_step)
                         return
 
@@ -593,7 +593,7 @@ while True:
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>? /yo',parse_mode="HTML")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
                         bot.register_next_step_handler(message, process_interesado_step)
                         return
 
@@ -813,13 +813,16 @@ while True:
                         bot.register_next_step_handler(msg, process_eliminar_step)
 
                         # Si al minuto no ha terminado la operación, la cancelamos y borramos los elementos de memoria
-                        while chat_id in operation_dict:
-                            if time.time() - operation_dict[chat_id] > 60:
-                                if chat_id in operation_dict:
-                                    del operation_dict[chat_id]
-                                bot.reply_to(message, "Operación cancelada.")
-                                break
-                            #time.sleep(1)
+                        try:
+                            while chat_id in operation_dict:
+                                if time.time() - operation_dict[chat_id] > 60:
+                                    if chat_id in operation_dict:
+                                        del operation_dict[chat_id]
+                                    bot.reply_to(message, "Operación cancelada.")
+                                    break
+                                #time.sleep(1)
+                        except Exception as e:
+                            pass
 
                     elif not cita_id.isdigit():
                         bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
@@ -840,7 +843,7 @@ while True:
 
                         bot.send_message(chat_id, reply,parse_mode="HTML")
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.\n'+str(e))
 
         def process_eliminar_step(message):
             try:
@@ -899,9 +902,9 @@ while True:
 
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
-                    if chat_id in cita_dict:
-                        del cita_dict[chat_id]
-                    bot.send_message(chat_id, "Operación cancelada.")
+                if chat_id in cita_dict:
+                    del cita_dict[chat_id]
+                bot.send_message(chat_id, "Operación cancelada.")
 
         @bot.message_handler(commands=['testingmode'])
         def command_citastodas(message):
