@@ -81,6 +81,13 @@ while True:
                 self.interesado = None
                 self.acompanantes = None
 
+        modificar_dict = {}
+
+        class Modificacion:
+            def __init__(self, numeroCita):
+                self.numeroCita = numeroCita
+                self.dato = None
+
         operation_dict = {}
         # -----------------------------
     
@@ -116,7 +123,8 @@ while True:
                         
                         msg = bot.reply_to(message, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
 
-                        operation_dict[chat_id] = time.time()
+                        start = time.time()
+                        operation_dict[chat_id] = start
 
                         bot.register_next_step_handler(msg, process_mostrar_step)
 
@@ -127,7 +135,11 @@ while True:
                                     del operation_dict[chat_id]
                                 bot.reply_to(message, "Operación cancelada.")
                                 break
-                            #time.sleep(1)
+                        #time.sleep(60)
+                        #if (chat_id in operation_dict): # Si sigue esta sesión activa
+                        #    if operation_dict[chat_id] == start: # Si es esta sesión y no otra nueva que haya abierto el usuario después (o antes)
+                        #        del operation_dict[chat_id]
+                        #        bot.reply_to(message, "Operación cancelada.")
 
                     elif not cita_id.isdigit():
                         bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmostrar 6\"")
@@ -179,6 +191,14 @@ while True:
                 
                     numeroCita = message.text
 
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_mostrar_step)
+                        return
+
                     match = numeroCita.isdigit()
 
                     if not match:
@@ -187,13 +207,6 @@ while True:
                         bot.register_next_step_handler(msg, process_mostrar_step)
                         return
 
-                    match = message.content_type == "text"
-
-                    if not match:
-                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_mostrar_step)
-                        return
                     if chat_id in operation_dict:
                         del operation_dict[chat_id]
 
@@ -264,7 +277,7 @@ while True:
                                 if row['hora'] is None:
                                     hora = ""
                                 else:
-                                    hora = hora.split(":",2)[0] + ":" + hora.split(":",2)[1]
+                                    hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
 
                                 if row['direccion'] is None:
                                     direccion = ""
@@ -369,12 +382,20 @@ while True:
                 
                     dia = message.text
 
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_dia_step)
+                        return
+
                     match = re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}', dia)
 
                     if not match:
                         bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
-                        msg = bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_dia_step)
+                        bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_dia_step)
                         return
 
                     match = message.content_type == "text"
@@ -394,8 +415,8 @@ while True:
 
                     if not match:
                         bot.reply_to(message,"<b>" + dia + "</b> no es una fecha válida.",parse_mode="HTML")
-                        msg = bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_dia_step)
+                        bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_dia_step)
                         return
 
                     cita = Cita(dia)
@@ -419,20 +440,20 @@ while True:
                 
                     hora = message.text
 
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_hora_step)
+                        return
+
                     if hora != "/saltar" and hora != "/saltar@Citas_Bot":
 
                         match = re.search('(\d){1,2}:(\d){1,2}', hora)
                     
                         if not match:
                             bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
-                            bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
-                            bot.register_next_step_handler(message, process_hora_step)
-                            return
-
-                        match = message.content_type == "text"
-
-                        if not match:
-                            bot.reply_to(message, "Eh eh, sólo texto por favor.")
                             bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
                             bot.register_next_step_handler(message, process_hora_step)
                             return
@@ -486,18 +507,18 @@ while True:
                 
                     motivo = message.text
 
-                    match = len(motivo) <= 45
-
-                    if not match:
-                        bot.reply_to(message, "El motivo no puede ser mayor de 45 caracteres.")
-                        bot.send_message(chat_id, '¿Cuál es el <b>motivo</b>?',parse_mode="HTML")
-                        bot.register_next_step_handler(message, process_motivo_step)
-                        return
-
                     match = message.content_type == "text"
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Cuál es el <b>motivo</b>?',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_motivo_step)
+                        return
+
+                    match = len(motivo) <= 45
+
+                    if not match:
+                        bot.reply_to(message, "El motivo no puede ser mayor de 45 caracteres.")
                         bot.send_message(chat_id, '¿Cuál es el <b>motivo</b>?',parse_mode="HTML")
                         bot.register_next_step_handler(message, process_motivo_step)
                         return
@@ -525,18 +546,18 @@ while True:
                 
                     lugar = message.text
 
-                    match = len(lugar) <= 50
-
-                    if not match:
-                        bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
-                        bot.send_message(chat_id, '¿En qué <b>lugar</b>?',parse_mode="HTML")
-                        bot.register_next_step_handler(message, process_lugar_step)
-                        return
-
                     match = message.content_type == "text"
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿En qué <b>lugar</b>?',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_lugar_step)
+                        return
+
+                    match = len(lugar) <= 50
+
+                    if not match:
+                        bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
                         bot.send_message(chat_id, '¿En qué <b>lugar</b>?',parse_mode="HTML")
                         bot.register_next_step_handler(message, process_lugar_step)
                         return
@@ -563,20 +584,20 @@ while True:
                 
                     direccion = message.text
 
-                    if direccion != "/saltar" and hora != "/saltar@Citas_Bot":
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Cuál es la <b>dirección</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_direccion_step)
+                        return
+
+                    if direccion != "/saltar" and direccion != "/saltar@Citas_Bot":
 
                         match = len(direccion) <= 100
 
                         if not match:
                             bot.reply_to(message, "El lugar no puede ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, '¿Cuál es la <b>dirección</b>? /saltar',parse_mode="HTML")
-                            bot.register_next_step_handler(message, process_direccion_step)
-                            return
-
-                        match = message.content_type == "text"
-
-                        if not match:
-                            bot.reply_to(message, "Eh eh, sólo texto por favor.")
                             bot.send_message(chat_id, '¿Cuál es la <b>dirección</b>? /saltar',parse_mode="HTML")
                             bot.register_next_step_handler(message, process_direccion_step)
                             return
@@ -610,20 +631,20 @@ while True:
                 
                     interesado = message.text
 
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
+                        bot.register_next_step_handler(message, process_interesado_step)
+                        return
+
                     #if interesado != "/yo":
 
                     match = len(interesado) <= 45
 
                     if not match:
                         bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
-                        bot.send_message(chat_id, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
-                        bot.register_next_step_handler(message, process_interesado_step)
-                        return
-
-                    match = message.content_type == "text"
-
-                    if not match:
-                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
                         bot.send_message(chat_id, '¿Quién es el <b>interesado</b>?',parse_mode="HTML") # /yo
                         bot.register_next_step_handler(message, process_interesado_step)
                         return
@@ -660,20 +681,20 @@ while True:
                 
                     acompanantes = message.text
 
-                    if acompanantes != "/saltar" and hora != "/saltar@Citas_Bot":
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_acompanantes_step)
+                        return
+
+                    if acompanantes != "/saltar" and acompanantes != "/saltar@Citas_Bot":
 
                         match = len(acompanantes) <= 100
 
                         if not match:
                             bot.reply_to(message, "Los acompañantes no pueden ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
-                            bot.register_next_step_handler(message, process_acompanantes_step)
-                            return
-
-                        match = message.content_type == "text"
-
-                        if not match:
-                            bot.reply_to(message, "Eh eh, sólo texto por favor.")
                             bot.send_message(chat_id, '¿Quiénes son los <b>acompañantes</b>? /saltar',parse_mode="HTML")
                             bot.register_next_step_handler(message, process_acompanantes_step)
                             return
@@ -825,8 +846,442 @@ while True:
 
         # ------------------- END: /citascrear ----------------------- #
 
+        # ------------------- START: /citasmodificar ----------------------- #
+
+        @bot.message_handler(commands=['citasmodificar'])
+        def command_citasmodificar(message):
+            try:
+                if testing(message):
+                    chat_id = message.chat.id
+                    text = message.text
+                    cita_id = text.replace("/citasmodificar@Citas_Bot", "")
+                    cita_id = cita_id.replace("/citasmodificar", "")
+                    cita_id = cita_id.replace(" ", "")
+
+                    if cita_id == "":
+                        
+                        msg = bot.reply_to(message, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+
+                        operation_dict[chat_id] = time.time()
+
+                        bot.register_next_step_handler(msg, process_modificar_step)
+
+                        # Si a los 2 minutos no ha terminado la operación, la cancelamos y borramos los elementos de memoria
+                        try:
+                            while chat_id in operation_dict:
+                                if time.time() - operation_dict[chat_id] > 120:
+                                    if chat_id in operation_dict:
+                                        del operation_dict[chat_id]
+                                    if chat_id in modificar_dict:
+                                        del modificar_dict[chat_id]
+                                    markup = types.ReplyKeyboardHide(selective=False)
+                                    bot.reply_to(message, "Operación cancelada.", reply_markup=markup)
+                                    break
+                                #time.sleep(1)
+                        except Exception as e:
+                            pass
+
+                    elif not cita_id.isdigit():
+                        bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citasmodificar 6\"")
+                    else:
+
+                        # Primero comprobamos que exista una cita con ese ID
+                        database_connection()
+                        with connection.cursor() as cursor:
+                            sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE id ='" + str(cita_id) + "' LIMIT 1)"
+                            cursor.execute(sql)
+                            row = cursor.fetchone()
+                            connection.close()
+                            #bot.send_message(chat_id, "Aquí tienes: " + str(row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)")) )
+                            if row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)") == 1:
+
+                                modificacion = Modificacion(cita_id)
+                                modificar_dict[chat_id] = modificacion
+
+                                markup = types.ReplyKeyboardMarkup()
+                                itembtn1 = types.KeyboardButton('Día')
+                                itembtn2 = types.KeyboardButton('Hora')
+                                itembtn3 = types.KeyboardButton('Motivo')
+                                itembtn4 = types.KeyboardButton('Lugar')
+                                itembtn5 = types.KeyboardButton('Dirección')
+                                itembtn6 = types.KeyboardButton('Interesado')
+                                itembtn7 = types.KeyboardButton('Acompañantes')
+                                markup.row(itembtn1, itembtn2)
+                                markup.row(itembtn3, itembtn4)
+                                markup.row(itembtn5, itembtn6)
+                                markup.row(itembtn7)
+                        
+                                msg = bot.reply_to(message, "¿Qué dato quieres modificar de la cita? /cancelar", reply_markup=markup)
+
+                                operation_dict[chat_id] = time.time()
+
+                                bot.register_next_step_handler(msg, process_dato_modificar_step)
+
+                                # Si a los 2 minutos no ha terminado la operación, la cancelamos y borramos los elementos de memoria
+                                try:
+                                    while chat_id in operation_dict:
+                                        if time.time() - operation_dict[chat_id] > 120:
+                                            if chat_id in operation_dict:
+                                                del operation_dict[chat_id]
+                                            if chat_id in modificar_dict:
+                                                del modificar_dict[chat_id]
+                                            markup = types.ReplyKeyboardHide(selective=False)
+                                            bot.reply_to(message, "Operación cancelada.", reply_markup=markup)
+                                            break
+                                        #time.sleep(1)
+                                except Exception as e:
+                                    pass
+
+                            else:
+                                if chat_id in operation_dict:
+                                    del operation_dict[chat_id]
+                                if chat_id in modificar_dict:
+                                    del modificar_dict[chat_id]
+                                bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>.",parse_mode="HTML")
+
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in modificar_dict:
+                    del modificar_dict[chat_id]
+                markup = types.ReplyKeyboardHide(selective=False)
+                bot.reply_to(message, 'Algo ha salido mal al modificar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador', reply_markup=markup)#\n'+str(e))
+
+        def process_modificar_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    numeroCita = message.text
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_modificar_step)
+                        return
+
+                    match = numeroCita.isdigit()
+
+                    if not match:
+                        bot.reply_to(message, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: <b>6</b>",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_modificar_step)
+                        return
+
+                    # Primero comprobamos que exista una cita con ese ID
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE id ='" + str(numeroCita) + "' LIMIT 1)"
+                        cursor.execute(sql)
+                        row = cursor.fetchone()
+                        connection.close()
+                        #bot.send_message(chat_id, "Aquí tienes: " + str(row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)")) )
+                        if row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(numeroCita)+"' LIMIT 1)") == 1:
+
+                            #if chat_id in operation_dict:
+                            #    del operation_dict[chat_id]
+                            modificacion = Modificacion(numeroCita)
+                            modificar_dict[chat_id] = modificacion
+
+                            markup = types.ReplyKeyboardMarkup()
+                            itembtn1 = types.KeyboardButton('Día')
+                            itembtn2 = types.KeyboardButton('Hora')
+                            itembtn3 = types.KeyboardButton('Motivo')
+                            itembtn4 = types.KeyboardButton('Lugar')
+                            itembtn5 = types.KeyboardButton('Dirección')
+                            itembtn6 = types.KeyboardButton('Interesado')
+                            itembtn7 = types.KeyboardButton('Acompañantes')
+                            markup.row(itembtn1, itembtn2)
+                            markup.row(itembtn3, itembtn4)
+                            markup.row(itembtn5, itembtn6)
+                            markup.row(itembtn7)
+
+                            msg = bot.reply_to(message, "¿Qué dato quieres modificar de la cita? /cancelar", reply_markup=markup)
+
+                            bot.register_next_step_handler(msg, process_dato_modificar_step)
+
+                        else:
+                            if chat_id in operation_dict:
+                                del operation_dict[chat_id]
+                            if chat_id in modificar_dict:
+                                del modificar_dict[chat_id]
+                            bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(numeroCita)+"</b>.",parse_mode="HTML")
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in modificar_dict:
+                    del modificar_dict[chat_id]
+                markup = types.ReplyKeyboardHide(selective=False)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.', reply_markup=markup)# \n'+str(e))
+
+        def process_dato_modificar_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    dato = message.text
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Por favor, selecciona una opción del <b>teclado de botones</b>.",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "¿Qué dato quieres modificar de la cita? /cancelar")
+                        bot.register_next_step_handler(msg, process_dato_modificar_step)
+                        return
+
+                    match = dato == "Día" or dato == "Hora" or dato == "Motivo" or dato == "Lugar" or dato == "Dirección" or dato == "Interesado" or dato == "Acompañantes"
+
+                    if not match:
+                        bot.reply_to(message, "Por favor, selecciona una opción del <b>teclado de botones</b>.",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "¿Qué dato quieres modificar de la cita? /cancelar")
+                        bot.register_next_step_handler(msg, process_dato_modificar_step)
+                        return
+
+                    #if chat_id in operation_dict:
+                    #    del operation_dict[chat_id]
+
+                    if dato == "Día":
+                        dato = "dia"
+
+                    elif dato == "Hora":
+                        dato = "hora"
+
+                    elif dato == "Motivo":
+                        dato = "motivo"
+
+                    elif dato == "Lugar":
+                        dato = "lugar"
+
+                    elif dato == "Dirección":
+                        dato = "direccion"
+
+                    elif dato == "Interesado":
+                        dato = "interesado"
+
+                    elif dato == "Acompañantes":
+                        dato = "acompanantes"
+
+                    modificacion = modificar_dict[chat_id]
+                    modificacion.dato = dato
+
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        sql = "SELECT " + dato + " FROM `cita` WHERE `id`="+str(modificacion.numeroCita)
+
+                        #if chat_id in modificar_dict:
+                        #    del modificar_dict[chat_id]
+
+                        cursor.execute(sql)
+                        for (data) in cursor:
+
+                            datoOriginal = data[dato]
+
+                            if datoOriginal is None:
+                                datoOriginal = ""
+                            else:
+
+                                if dato == "hora":
+                                    datoOriginal = str(datoOriginal).split(":",2)[0] + ":" + str(datoOriginal).split(":",2)[1]
+                                if dato == "dia":
+                                    datoOriginal = datoOriginal.strftime("%d/%m/%Y")
+
+                            markup = types.ReplyKeyboardHide(selective=False)
+                            bot.send_message(chat_id, "Esto es lo que hay ahora: <b>" + str(datoOriginal) + "</b>",parse_mode="HTML")
+
+                            msg = bot.reply_to(message, "¿Por qué quieres cambiarlo? /cancelar", reply_markup=markup)
+
+                            bot.register_next_step_handler(msg, process_accion_modificar_step)
+                        
+                    connection.close()
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in modificar_dict:
+                    del modificar_dict[chat_id]
+                markup = types.ReplyKeyboardHide(selective=False)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.', reply_markup=markup)# \n'+str(e))
+
+        def process_accion_modificar_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    nuevoDato = message.text
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                        bot.register_next_step_handler(message, process_accion_modificar_step)
+                        return
+
+                    modificacion = modificar_dict[chat_id]
+                    numeroCita = modificacion.numeroCita
+                    dato = modificacion.dato
+
+                    if dato == "dia":
+                        match = re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}', nuevoDato)
+
+                        if not match:
+                            bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        match = message.content_type == "text"
+
+                        day = nuevoDato.split("/",1)[0]
+                        month = nuevoDato.split("/",2)[1]
+                        year = nuevoDato.split("/",2)[2]
+
+                        match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                        if len(day) == 1:
+                            day = "0" + day
+                        if len(month) == 1:
+                            month = "0" + month
+
+                        nuevoDato = day + "/" + month + "/" + year
+
+                        if not match:
+                            bot.reply_to(message,"<b>" + nuevoDato + "</b> no es una fecha válida.",parse_mode="HTML")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        nuevoDato = nuevoDato[-4:] + "-" + nuevoDato[3:5] + "-" + nuevoDato[0:2]
+
+                    elif dato == "hora":
+                        match = re.search('(\d){1,2}:(\d){1,2}', nuevoDato)
+                    
+                        if not match:
+                            bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        horas = nuevoDato.split(":",1)[0]
+                        minutos = nuevoDato.split(":",1)[1]
+
+                        match = int(horas) <= 24 and int(horas) >= 0 and int(minutos) <= 59 and int(minutos) >= 0
+
+                        if len(horas) == 1:
+                            horas = "0" + horas
+                        if len(minutos) == 1:
+                            minutos = "0" + minutos
+
+                        nuevoDato = horas + ":" + minutos
+
+                        if not match:
+                            bot.reply_to(message, "<b>" + nuevoDato + "</b> no es una hora válida.",parse_mode="HTML")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                    elif dato == "motivo":
+                        match = len(nuevoDato) <= 45
+
+                        if not match:
+                            bot.reply_to(message, "El motivo no puede ser mayor de 45 caracteres.")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        if not isinstance(nuevoDato, str):
+                            nuevoDato = nuevoDato.decode('utf-8')
+
+                    elif dato == "lugar":
+                        match = len(nuevoDato) <= 50
+
+                        if not match:
+                            bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        if not isinstance(nuevoDato, str):
+                            nuevoDato = nuevoDato.decode('utf-8')
+
+                    elif dato == "direccion":
+                        match = len(nuevoDato) <= 100
+
+                        if not match:
+                            bot.reply_to(message, "El lugar no puede ser mayor de 100 caracteres.")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        if not isinstance(nuevoDato, str):
+                            nuevoDato = nuevoDato.decode('utf-8')
+
+                    elif dato == "interesado":
+                        match = len(nuevoDato) <= 45
+
+                        if not match:
+                            bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        if not isinstance(nuevoDato, str):
+                            nuevoDato = nuevoDato.decode('utf-8')
+
+                    elif dato == "acompanantes":
+                        match = len(nuevoDato) <= 100
+
+                        if not match:
+                            bot.reply_to(message, "Los acompañantes no pueden ser mayor de 100 caracteres.")
+                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.register_next_step_handler(message, process_accion_modificar_step)
+                            return
+
+                        if not isinstance(nuevoDato, str):
+                            nuevoDato = nuevoDato.decode('utf-8')
+
+                    if chat_id in operation_dict:
+                        del operation_dict[chat_id]
+                    if chat_id in modificar_dict:
+                        del modificar_dict[chat_id]
+
+                    database_connection()
+                    with connection.cursor() as cursor:
+                        sql = "UPDATE cita SET "+dato+"='"+nuevoDato+"' WHERE id="+str(numeroCita)
+
+                        cursor.execute(sql)
+                        modified = cursor.rowcount # SELECT ROW_COUNT()
+                        connection.commit()
+                        
+                    connection.close()
+
+                    if modified == 0:
+                        reply = "No hay ninguna cita con el \"Número de cita\" <b>"+str(numeroCita)+"</b>."
+                    else:
+                        reply = "¡Cita modificada!"
+
+                    bot.send_message(chat_id, reply,parse_mode="HTML")
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in modificar_dict:
+                    del modificar_dict[chat_id]
+                markup = types.ReplyKeyboardHide(selective=False)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.', reply_markup=markup)# \n'+str(e))
+
+        # ------------------- END: /citasmodificar ----------------------- #
+
         @bot.message_handler(commands=['citaseliminar'])
-        def command_citasmostrar(message):
+        def command_citaseliminar(message):
             try:
                 if testing(message):
                     chat_id = message.chat.id
@@ -883,20 +1338,20 @@ while True:
                 
                     numeroCita = message.text
 
-                    match = numeroCita.isdigit()
-
-                    if not match:
-                        bot.reply_to(message, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: <b>6</b>",parse_mode="HTML")
-                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_eliminar_step)
-                        return
-
                     match = message.content_type == "text"
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                        msg = bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
-                        bot.register_next_step_handler(msg, process_eliminar_step)
+                        bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_eliminar_step)
+                        return
+
+                    match = numeroCita.isdigit()
+
+                    if not match:
+                        bot.reply_to(message, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: <b>6</b>",parse_mode="HTML")
+                        bot.send_message(chat_id, "Dime el <b>Número de cita</b>. /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(message, process_eliminar_step)
                         return
 
                     if chat_id in operation_dict:
@@ -931,14 +1386,21 @@ while True:
                 chat_id = message.chat.id
                 #from_id = message.from_user.id
 
-                if chat_id in operation_dict:
-                    del operation_dict[chat_id]
                 if chat_id in cita_dict:
                     del cita_dict[chat_id]
-                bot.send_message(chat_id, "Operación cancelada.")
+
+                if chat_id in modificar_dict:
+                    del modificar_dict[chat_id]
+
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+
+                    markup = types.ReplyKeyboardHide(selective=False)
+                    bot.send_message(chat_id, "Operación cancelada.", reply_markup=markup)
+
 
         @bot.message_handler(commands=['testingmode'])
-        def command_citastodas(message):
+        def command_testingmode(message):
             from_id = message.from_user.id
             if from_id == cnf.admin_id:
                 chat_id = message.chat.id
@@ -952,7 +1414,7 @@ while True:
 
         
         @bot.message_handler(commands=['stop']) # Emergency STOP
-        def command_citastodas(message):
+        def command_stop(message):
             from_id = message.from_user.id
             if from_id == cnf.admin_id:
                 chat_id = message.chat.id
