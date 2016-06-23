@@ -143,7 +143,7 @@ while True:
                                     if row['hora'] is None:
                                         hora = ""
                                     else:
-                                        hora = str(row['hora'])[:5]
+                                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
 
                                     if row['direccion'] is None:
                                         direccion = ""
@@ -208,7 +208,7 @@ while True:
                                 if row['hora'] is None:
                                     hora = ""
                                 else:
-                                    hora = str(row['hora'])[:5]
+                                    hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
 
                                 if row['direccion'] is None:
                                     direccion = ""
@@ -264,7 +264,7 @@ while True:
                                 if row['hora'] is None:
                                     hora = ""
                                 else:
-                                    hora = str(row['hora'])[:5]
+                                    hora = hora.split(":",2)[0] + ":" + hora.split(":",2)[1]
 
                                 if row['direccion'] is None:
                                     direccion = ""
@@ -369,7 +369,7 @@ while True:
                 
                     dia = message.text
 
-                    match = re.search('(\d){2}\/(\d){2}\/(\d){4}', dia)
+                    match = re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}', dia)
 
                     if not match:
                         bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
@@ -379,8 +379,21 @@ while True:
 
                     match = message.content_type == "text"
 
+                    day = dia.split("/",1)[0]
+                    month = dia.split("/",2)[1]
+                    year = dia.split("/",2)[2]
+
+                    match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                    if len(day) == 1:
+                        day = "0" + day
+                    if len(month) == 1:
+                        month = "0" + month
+
+                    dia = day + "/" + month + "/" + year
+
                     if not match:
-                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        bot.reply_to(message,"<b>" + dia + "</b> no es una fecha válida.",parse_mode="HTML")
                         msg = bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
                         bot.register_next_step_handler(msg, process_dia_step)
                         return
@@ -397,7 +410,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') # \n'+str(e)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')#\n'+str(e))
 
         def process_hora_step(message):
             try:
@@ -408,7 +421,7 @@ while True:
 
                     if hora != "/saltar":
 
-                        match = re.search('(\d){2}:(\d){2}', hora)
+                        match = re.search('(\d){1,2}:(\d){1,2}', hora)
                     
                         if not match:
                             bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
@@ -420,6 +433,24 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                            bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
+                            bot.register_next_step_handler(message, process_hora_step)
+                            return
+
+                        horas = hora.split(":",1)[0]
+                        minutos = hora.split(":",1)[1]
+
+                        match = int(horas) <= 24 and int(horas) >= 0 and int(minutos) <= 59 and int(minutos) >= 0
+
+                        if len(horas) == 1:
+                            horas = "0" + horas
+                        if len(minutos) == 1:
+                            minutos = "0" + minutos
+
+                        hora = horas + ":" + minutos
+
+                        if not match:
+                            bot.reply_to(message, "<b>" + hora + "</b> no es una hora válida.",parse_mode="HTML")
                             bot.send_message(chat_id, '¿A qué <b>hora</b>? /saltar',parse_mode="HTML")
                             bot.register_next_step_handler(message, process_hora_step)
                             return
@@ -843,7 +874,7 @@ while True:
 
                         bot.send_message(chat_id, reply,parse_mode="HTML")
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
 
         def process_eliminar_step(message):
             try:
@@ -892,7 +923,7 @@ while True:
             except Exception as e:
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador. \n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
 
         @bot.message_handler(commands=['cancelar'])
         def command_cancelar(message):
