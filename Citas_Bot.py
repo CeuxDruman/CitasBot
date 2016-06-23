@@ -419,7 +419,7 @@ while True:
                 
                     hora = message.text
 
-                    if hora != "/saltar":
+                    if hora != "/saltar" and hora != "/saltar@Citas_Bot":
 
                         match = re.search('(\d){1,2}:(\d){1,2}', hora)
                     
@@ -563,7 +563,7 @@ while True:
                 
                     direccion = message.text
 
-                    if direccion != "/saltar":
+                    if direccion != "/saltar" and hora != "/saltar@Citas_Bot":
 
                         match = len(direccion) <= 100
 
@@ -660,7 +660,7 @@ while True:
                 
                     acompanantes = message.text
 
-                    if acompanantes != "/saltar":
+                    if acompanantes != "/saltar" and hora != "/saltar@Citas_Bot":
 
                         match = len(acompanantes) <= 100
 
