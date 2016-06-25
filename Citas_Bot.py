@@ -88,6 +88,13 @@ while True:
                 self.numeroCita = numeroCita
                 self.dato = None
 
+        fechas_dict = {}
+
+        class Fechas:
+            def __init__(self, fecha):
+                self.fecha = fecha
+                self.fechaDB = None
+
         operation_dict = {}
         # -----------------------------
     
@@ -105,9 +112,11 @@ while True:
 				    "\n\n/citasmodificar: Permite modificar una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmodificar 1\")"
 				    "\n\n/citaseliminar: Permite eliminar por completo una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citaseliminar 1\")"
 				    "\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
-				    "\n\nPuedes cancelar operaciones en curso mediante el comando /cancelar ."
+                    # # # #
+                    "\n\n<b>NOTA1</b>: Los comandos que requieren de algún dato adicional pueden ser pasados junto con el comando o enviando sólo el comando, en cuyo caso se te preguntará por el dato solicitado a continuación."
+				    "\n\n<b>NOTA2</b>: Puedes cancelar operaciones en curso mediante el comando /cancelar ."
                     )
-                bot.send_message(chat_id, reply)
+                bot.send_message(chat_id, reply,parse_mode="HTML")
     
         @bot.message_handler(commands=['citasmostrar'])
         def command_citasmostrar(message):
@@ -129,12 +138,15 @@ while True:
                         bot.register_next_step_handler(msg, process_mostrar_step)
 
                         # Si al minuto no ha terminado la operación, la cancelamos y borramos los elementos de memoria
-                        while chat_id in operation_dict:
-                            if time.time() - operation_dict[chat_id] > 60:
-                                if chat_id in operation_dict:
-                                    del operation_dict[chat_id]
-                                bot.reply_to(message, "Operación cancelada.")
-                                break
+                        try:
+                            while chat_id in operation_dict:
+                                if time.time() - operation_dict[chat_id] > 60:
+                                    if chat_id in operation_dict:
+                                        del operation_dict[chat_id]
+                                    bot.reply_to(message, "Operación cancelada.")
+                                    break
+                        except Exception as e:
+                            pass
                         #time.sleep(60)
                         #if (chat_id in operation_dict): # Si sigue esta sesión activa
                         #    if operation_dict[chat_id] == start: # Si es esta sesión y no otra nueva que haya abierto el usuario después (o antes)
@@ -329,6 +341,373 @@ while True:
             except Exception as e:
                 bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
 
+        @bot.message_handler(commands=['citasfechas'])
+        def command_citasfechas(message):
+            try:
+                if testing(message):
+                    chat_id = message.chat.id
+                    text = message.text
+                    fechas = text.replace("/citasfechas@Citas_Bot ", "")
+                    fechas = fechas.replace("/citasfechas ", "")
+                    fechas = fechas.replace("/citasfechas@Citas_Bot", "")
+                    fechas = fechas.replace("/citasfechas", "")
+
+                    if fechas == "":
+                        
+                        msg = bot.reply_to(message, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+
+                        start = time.time()
+                        operation_dict[chat_id] = start
+
+                        bot.register_next_step_handler(msg, process_fecha_step)
+
+                        # Si al minuto no ha terminado la operación, la cancelamos y borramos los elementos de memoria
+                        try:
+                            while chat_id in operation_dict:
+                                if time.time() - operation_dict[chat_id] > 60:
+                                    if chat_id in operation_dict:
+                                        del operation_dict[chat_id]
+                                    bot.reply_to(message, "Operación cancelada.")
+                                    break
+                        except Exception as e:
+                            pass
+
+                    elif not re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}( a (\d){1,2}\/(\d){1,2}\/(\d){4})?', fechas):
+                        bot.send_message(chat_id, "Debes introducir una fecha (<b>"+str(time.strftime('%d/%m/%Y'))+"</b>) o dos fechas (<b>13/02/2016 a "+str(time.strftime('%d/%m/%Y'))+"</b>) con los formatos indicados.",parse_mode="HTML")
+                    else:
+
+                        database_connection()
+                        with connection.cursor() as cursor:
+                            if len(fechas) <= 10:
+
+                                day = fechas.split("/",1)[0]
+                                month = fechas.split("/",2)[1]
+                                year = fechas.split("/",2)[2]
+
+                                match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                                if not match:
+                                    bot.send_message(chat_id, "<b>"+fechas+"</b> no es una fecha válida",parse_mode="HTML")
+                                    return
+
+                                if len(day) == 1:
+                                    day = "0" + day
+                                if len(month) == 1:
+                                    month = "0" + month
+
+                                fecha = year + "-" + month + "-" + day
+
+                                sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fecha)+"', '%Y-%m-%d')"
+                            else:
+                                fecha1 = fechas.split(" a ",1)[0]
+                                fecha2 = fechas.split(" a ",1)[1]
+
+                                day = fecha1.split("/",1)[0]
+                                month = fecha1.split("/",2)[1]
+                                year = fecha1.split("/",2)[2]
+
+                                match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                                if not match:
+                                    bot.send_message(chat_id, "<b>"+fecha1+"</b> no es una fecha válida",parse_mode="HTML")
+                                    return
+
+                                if len(day) == 1:
+                                    day = "0" + day
+                                if len(month) == 1:
+                                    month = "0" + month
+
+                                fechaUno = year + "-" + month + "-" + day
+
+                                day = fecha2.split("/",1)[0]
+                                month = fecha2.split("/",2)[1]
+                                year = fecha2.split("/",2)[2]
+
+                                match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                                if not match:
+                                    bot.send_message(chat_id, "<b>"+fecha2+"</b> no es una fecha válida",parse_mode="HTML")
+                                    return
+
+                                if len(day) == 1:
+                                    day = "0" + day
+                                if len(month) == 1:
+                                    month = "0" + month
+
+                                fechaDos = year + "-" + month + "-" + day
+
+                                sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
+                            cursor.execute(sql)
+                            if cursor.rowcount > 0:
+                                row = cursor.fetchone()
+                                if len(fechas) <= 10:
+                                    reply = "Citas programadas para el día: <b>" + fechas + "</b>\n"
+                                else:
+                                    reply = "Citas programadas entre los días: <b>" + fecha1 + "</b> y <b>" + fecha2 + "</b>\n"
+                                while(row):
+                                    if row['hora'] is None:
+                                        hora = ""
+                                    else:
+                                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                                    if row['direccion'] is None:
+                                        direccion = ""
+                                    else:
+                                        direccion = str(row['direccion'])
+
+                                    if row['acompanantes'] is None:
+                                        acompanantes = ""
+                                    else:
+                                        acompanantes = str(row['acompanantes'])
+
+                                    reply += "----------------------\n"
+                                    reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						                "Hora: " + hora + "\n"
+						                "Motivo: " + row['motivo'] + "\n"
+						                "Lugar: " + row['lugar'] + "\n"
+						                "Dirección: " + direccion + "\n"
+						                "Interesado: " + row['interesado'] + "\n"
+						                "Acompañantes: " + acompanantes + "\n"
+                                        )
+                                    row = cursor.fetchone()
+                                bot.send_message(chat_id, reply,parse_mode="HTML")
+                            else:
+                                if len(fechas) <= 10:
+                                    bot.send_message(chat_id, "No hay ninguna cita programada para el día <b>" + fechas + "</b>",parse_mode="HTML")
+                                else:
+                                    bot.send_message(chat_id, "No hay ninguna cita programada entre los días <b>" + fecha1 + "</b> y <b>" + fecha2 + "</b>",parse_mode="HTML")
+                                
+                        connection.close()
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in fechas_dict:
+                    del fechas_dict[chat_id]
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+
+        def process_fecha_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    fecha = message.text
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_fecha_step)
+                        return
+
+                    match = re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}', fecha)
+
+                    if not match:
+                        bot.reply_to(message, "Debes introducir una fecha con el formato: <b>"+str(time.strftime('%d/%m/%Y'))+"</b>",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_fecha_step)
+                        return
+
+                    day = fecha.split("/",1)[0]
+                    month = fecha.split("/",2)[1]
+                    year = fecha.split("/",2)[2]
+
+                    match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                    if not match:
+                        bot.reply_to(message, "<b>"+fecha+"</b> no es una fecha válida",parse_mode="HTML")
+                        msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_fecha_step)
+                        return
+
+                    if len(day) == 1:
+                        day = "0" + day
+                    if len(month) == 1:
+                        month = "0" + month
+
+                    fechaDB = year + "-" + month + "-" + day
+
+                    fechas = Fechas(fecha)
+                    fechas.fechaDB = fechaDB
+                    fechas_dict[chat_id] = fechas
+
+                    msg = bot.reply_to(message, "¿Hasta qué fecha? /cancelar (Click en /listo si sólo quieres ver las de la fecha indicada)",parse_mode="HTML")
+
+                    bot.register_next_step_handler(msg, process_fechas_step)
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in fechas_dict:
+                    del fechas_dict[chat_id]
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
+
+        def process_fechas_step(message):
+            try:
+                chat_id = message.chat.id
+                if chat_id in operation_dict:
+                
+                    fecha = message.text
+
+                    match = message.content_type == "text"
+
+                    if not match:
+                        bot.reply_to(message, "Eh eh, sólo texto por favor.")
+                        msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                        bot.register_next_step_handler(msg, process_fechas_step)
+                        return
+
+                    if fecha != "/listo":
+
+                        match = re.search('(\d){1,2}\/(\d){1,2}\/(\d){4}', fecha)
+
+                        if not match:
+                            bot.reply_to(message, "Debes introducir una fecha con el formato: <b>"+str(time.strftime('%d/%m/%Y'))+"</b>",parse_mode="HTML")
+                            msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                            bot.register_next_step_handler(msg, process_fechas_step)
+                            return
+
+                        day = fecha.split("/",1)[0]
+                        month = fecha.split("/",2)[1]
+                        year = fecha.split("/",2)[2]
+
+                        match = int(day) <= 31 and int(day) >= 1 and int(month) <= 12 and int(month) >= 1 and int(year) <= 3000 and int(year) >= 0
+
+                        if not match:
+                            bot.reply_to(message, "<b>"+fecha+"</b> no es una fecha válida",parse_mode="HTML")
+                            msg = bot.send_message(chat_id, "¿Para qué fecha? /cancelar",parse_mode="HTML")
+                            bot.register_next_step_handler(msg, process_fechas_step)
+                            return
+
+                        if len(day) == 1:
+                            day = "0" + day
+                        if len(month) == 1:
+                            month = "0" + month
+
+                        fechaDB = year + "-" + month + "-" + day
+
+                        fecha1 = fechas_dict[chat_id].fecha
+                        fecha2 = fecha
+                        fechaUno =fechas_dict[chat_id].fechaDB
+                        fechaDos = fechaDB
+
+                        database_connection()
+                        with connection.cursor() as cursor:
+
+                            if chat_id in operation_dict:
+                                del operation_dict[chat_id]
+                            if chat_id in fechas_dict:
+                                del fechas_dict[chat_id]
+                            
+                            sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
+
+                            cursor.execute(sql)
+                            if cursor.rowcount > 0:
+                                row = cursor.fetchone()
+                                reply = "Citas programadas entre los días: <b>" + fecha1 + "</b> y <b>" + fecha2 + "</b>\n"
+                                while(row):
+                                    if row['hora'] is None:
+                                        hora = ""
+                                    else:
+                                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                                    if row['direccion'] is None:
+                                        direccion = ""
+                                    else:
+                                        direccion = str(row['direccion'])
+
+                                    if row['acompanantes'] is None:
+                                        acompanantes = ""
+                                    else:
+                                        acompanantes = str(row['acompanantes'])
+
+                                    reply += "----------------------\n"
+                                    reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						                "Hora: " + hora + "\n"
+						                "Motivo: " + row['motivo'] + "\n"
+						                "Lugar: " + row['lugar'] + "\n"
+						                "Dirección: " + direccion + "\n"
+						                "Interesado: " + row['interesado'] + "\n"
+						                "Acompañantes: " + acompanantes + "\n"
+                                        )
+                                    row = cursor.fetchone()
+                                bot.send_message(chat_id, reply,parse_mode="HTML")
+                            else:
+                                bot.send_message(chat_id, "No hay ninguna cita programada entre los días <b>" + fecha1 + "</b> y <b>" + fecha2 + "</b>",parse_mode="HTML")
+                                
+                        connection.close()
+
+                        if chat_id in operation_dict:
+                            del operation_dict[chat_id]
+                        if chat_id in fechas_dict:
+                            del fechas_dict[chat_id]
+
+                    else:
+
+                        database_connection()
+                        with connection.cursor() as cursor:
+
+                            fecha = fechas_dict[chat_id].fecha
+                            fechaDB = fechas_dict[chat_id].fechaDB
+
+                            if chat_id in operation_dict:
+                                del operation_dict[chat_id]
+                            if chat_id in fechas_dict:
+                                del fechas_dict[chat_id]
+                            
+                            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaDB)+"', '%Y-%m-%d')"
+
+                            cursor.execute(sql)
+                            if cursor.rowcount > 0:
+                                row = cursor.fetchone()
+                                reply = "Citas programadas para el día: <b>" + fecha + "</b>\n"
+                                while(row):
+                                    if row['hora'] is None:
+                                        hora = ""
+                                    else:
+                                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                                    if row['direccion'] is None:
+                                        direccion = ""
+                                    else:
+                                        direccion = str(row['direccion'])
+
+                                    if row['acompanantes'] is None:
+                                        acompanantes = ""
+                                    else:
+                                        acompanantes = str(row['acompanantes'])
+
+                                    reply += "----------------------\n"
+                                    reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						                "Hora: " + hora + "\n"
+						                "Motivo: " + row['motivo'] + "\n"
+						                "Lugar: " + row['lugar'] + "\n"
+						                "Dirección: " + direccion + "\n"
+						                "Interesado: " + row['interesado'] + "\n"
+						                "Acompañantes: " + acompanantes + "\n"
+                                        )
+                                    row = cursor.fetchone()
+                                bot.send_message(chat_id, reply,parse_mode="HTML")
+                            else:
+                                bot.send_message(chat_id, "No hay ninguna cita programada para el día <b>" + fecha + "</b>",parse_mode="HTML")
+                                
+                        connection.close()
+
+                else:
+                    return
+            except Exception as e:
+                if chat_id in operation_dict:
+                    del operation_dict[chat_id]
+                if chat_id in fechas_dict:
+                    del fechas_dict[chat_id]
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
+
         # ------------------- START: /citascrear ----------------------- #
 
         @bot.message_handler(commands=['citascrear'])
@@ -397,8 +776,6 @@ while True:
                         bot.send_message(chat_id, "¿Para qué <b>fecha</b>?",parse_mode="HTML")
                         bot.register_next_step_handler(message, process_dia_step)
                         return
-
-                    match = message.content_type == "text"
 
                     day = dia.split("/",1)[0]
                     month = dia.split("/",2)[1]
@@ -1092,7 +1469,7 @@ while True:
                             markup = types.ReplyKeyboardHide(selective=False)
                             bot.send_message(chat_id, "Esto es lo que hay ahora: <b>" + str(datoOriginal) + "</b>",parse_mode="HTML")
 
-                            msg = bot.reply_to(message, "¿Por qué quieres cambiarlo? /cancelar", reply_markup=markup)
+                            msg = bot.reply_to(message, "Introduce ahora el nuevo dato: /cancelar", reply_markup=markup)
 
                             bot.register_next_step_handler(msg, process_accion_modificar_step)
                         
@@ -1119,7 +1496,7 @@ while True:
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                        bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                        bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                         bot.register_next_step_handler(message, process_accion_modificar_step)
                         return
 
@@ -1132,7 +1509,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1153,7 +1530,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message,"<b>" + nuevoDato + "</b> no es una fecha válida.",parse_mode="HTML")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1164,7 +1541,7 @@ while True:
                     
                         if not match:
                             bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1182,7 +1559,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "<b>" + nuevoDato + "</b> no es una hora válida.",parse_mode="HTML")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1191,7 +1568,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El motivo no puede ser mayor de 45 caracteres.")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1203,7 +1580,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1215,7 +1592,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El lugar no puede ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1227,7 +1604,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1239,7 +1616,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "Los acompañantes no pueden ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, "¿Por qué quieres cambiarlo? /cancelar")
+                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1392,12 +1769,14 @@ while True:
                 if chat_id in modificar_dict:
                     del modificar_dict[chat_id]
 
+                if chat_id in fechas_dict:
+                    del fechas_dict[chat_id]
+
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
 
                     markup = types.ReplyKeyboardHide(selective=False)
                     bot.send_message(chat_id, "Operación cancelada.", reply_markup=markup)
-
 
         @bot.message_handler(commands=['testingmode'])
         def command_testingmode(message):

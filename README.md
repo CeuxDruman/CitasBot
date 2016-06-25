@@ -11,7 +11,7 @@ This Telegram Bot will let group admins create, modify, delete, etc... any kind 
 
 ## Commands currently in development
 * __/citassemana__: Muestra las citas programadas para la semana actual en detalle.
-* __/citasfechas__: Muestra las citas programadas para la fecha indicada/las fechas indicadas en detalle.
+* __/citasfechas__: Muestra las citas programadas para la/s fecha/s indicada/s en detalle.
 * __/citasasistir__: Apuntarse como acompañante a una cita, dado el "Número de cita" de la misma.
 
 ## Features currently in development
