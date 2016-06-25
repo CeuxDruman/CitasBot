@@ -10,7 +10,7 @@ import time
 import re
 import sys
 import traceback
-import datetime
+from datetime import date, timedelta, datetime
 
 import cnf
 
@@ -318,6 +318,75 @@ while True:
                     connection.close()
             except Exception as e:
                 bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+
+        @bot.message_handler(commands=['citassemana'])
+        def command_citassemana(message):
+            try:
+                if testing(message):
+                    chat_id = message.chat.id
+                    text = message.text
+
+                    year = date.today().year
+                    week = datetime.utcnow().isocalendar()[1]
+
+                    d = date(year,1,1)
+                    if d.weekday() > 3:
+                        d = d + timedelta(7-d.weekday())
+                    else:
+                        d = d - timedelta(d.weekday())
+                    dlt = timedelta(days = (week-1)*7)
+
+                    firstDay = d + dlt
+                    lastDay = d + dlt + timedelta(days=6)
+
+                    database_connection()
+                    with connection.cursor() as cursor:
+
+                        if chat_id in operation_dict:
+                            del operation_dict[chat_id]
+                        if chat_id in fechas_dict:
+                            del fechas_dict[chat_id]
+                            
+                        sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(firstDay)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(lastDay)+"', '%Y-%m-%d') )"
+
+                        cursor.execute(sql)
+                        if cursor.rowcount > 0:
+                            row = cursor.fetchone()
+                            reply = "Citas programadas para esta semana\n"
+                            while(row):
+                                if row['hora'] is None:
+                                    hora = ""
+                                else:
+                                    hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                                if row['direccion'] is None:
+                                    direccion = ""
+                                else:
+                                    direccion = str(row['direccion'])
+
+                                if row['acompanantes'] is None:
+                                    acompanantes = ""
+                                else:
+                                    acompanantes = str(row['acompanantes'])
+
+                                reply += "----------------------\n"
+                                reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+						            "Hora: " + hora + "\n"
+						            "Motivo: " + row['motivo'] + "\n"
+						            "Lugar: " + row['lugar'] + "\n"
+						            "Dirección: " + direccion + "\n"
+						            "Interesado: " + row['interesado'] + "\n"
+						            "Acompañantes: " + acompanantes + "\n"
+                                    )
+                                row = cursor.fetchone()
+                            bot.send_message(chat_id, reply,parse_mode="HTML")
+                        else:
+                            bot.send_message(chat_id, "No hay ninguna cita programada para esta semana")
+                                
+                    connection.close()
+            except Exception as e:
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
     
         @bot.message_handler(commands=['citastodas'])
         def command_citastodas(message):
@@ -485,7 +554,7 @@ while True:
                 if chat_id in fechas_dict:
                     del fechas_dict[chat_id]
                 exc_type, exc_obj, exc_tb = sys.exc_info()
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))    \n"+str(exc_tb.tb_lineno)
 
         def process_fecha_step(message):
             try:

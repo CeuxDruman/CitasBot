@@ -9,9 +9,9 @@ This Telegram Bot will let group admins create, modify, delete, etc... any kind 
 * __/citaseliminar__: Elimina una cita dado el "Número de cita" de la misma.
 * __/citasmodificar__: Modifica una cita dado el "Número de cita" de la misma.
 * __/citasfechas__: Muestra las citas programadas para la/s fecha/s indicada/s en detalle.
+* __/citassemana__: Muestra las citas programadas para la semana actual en detalle.
 
 ## Commands currently in development
-* __/citassemana__: Muestra las citas programadas para la semana actual en detalle.
 * __/citasasistir__: Apuntarse como acompañante a una cita, dado el "Número de cita" de la misma.
 
 ## Features currently in development
