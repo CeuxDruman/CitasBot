@@ -16,6 +16,8 @@ import cnf
 
 testingMode = False # El modo de testing permite que sólo el admin del mismo (admin_id) lo use mediante chat privado con él
 stop = False
+attemps = 0 # Número de intentos de reinicio del Bot REALIZADOS tras una pérdida de conexión total a Internet.
+maxAttemps = 25 # Número MÁXIMO de intentos de reinicio del Bot tras una pérdida de conexión total a Internet.
 
 TOKEN = cnf.TOKEN
  
@@ -26,6 +28,7 @@ def listener(messages): # Definimos un listener para los mensajes
                         # dentro cada vez que el bot reciba un mensaje
 
     if stop:
+        print("BOT APAGADO")
         sys.exit()
 
     for m in messages:  # Por cada mensaje que recibamos...
@@ -50,8 +53,20 @@ connection = None
 while True:
     try:
         if stop:
+            print("BOT APAGADO")
             sys.exit()
-        bot.send_message(cnf.admin_id, 'Bot iniciado de nuevo '+u'\U0001F44D')
+
+        if attemps > 0:
+            print("Encendiendo Bot tras " + str(attemps) + " intentos...")
+            bot.send_message(cnf.admin_id, 'Bot iniciado de nuevo tras ' + str(attemps) + ' intentos. '+u'\U0001F44D')
+        else:
+            print("Encendiendo Bot...")
+            bot.send_message(cnf.admin_id, 'Bot iniciado de nuevo '+u'\U0001F44D')
+        #global attemps
+        attemps = 0
+
+        print("BOT INICIADO")
+
         #session = 0
 
         #with connection.cursor() as cursor:
@@ -111,7 +126,7 @@ while True:
 				    "\n\n/citascrear: Permite crear una nueva cita."
 				    "\n\n/citasmodificar: Permite modificar una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmodificar 1\")"
 				    "\n\n/citaseliminar: Permite eliminar por completo una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citaseliminar 1\")"
-				    "\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
+				    #"\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
                     # # # #
                     "\n\n<b>NOTA1</b>: Los comandos que requieren de algún dato adicional pueden ser pasados junto con el comando o enviando sólo el comando, en cuyo caso se te preguntará por el dato solicitado a continuación."
 				    "\n\n<b>NOTA2</b>: Puedes cancelar operaciones en curso mediante el comando /cancelar ."
@@ -553,8 +568,8 @@ while True:
                     del operation_dict[chat_id]
                 if chat_id in fechas_dict:
                     del fechas_dict[chat_id]
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))    \n"+str(exc_tb.tb_lineno)
+                #exc_type, exc_obj, exc_tb = sys.exc_info()
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))    \n"+str(exc_tb.tb_lineno) #exc_type, exc_obj, exc_tb = sys.exc_info()
 
         def process_fecha_step(message):
             try:
@@ -1948,9 +1963,25 @@ while True:
         bot.polling(none_stop=True)       # E iniciamos nuestro bot para que est? atento a los mensajes
 
     except Exception as e:
-        bot.send_message(cnf.admin_id, u'\U0001F4A5'+'¡Me he caído! '+u'\U0001F631\n'+str(e))
-        bot.send_message(cnf.admin_id, 'Reiniciando en 10 segundos... /stop')
-        time.sleep(10)
+        try:
+            print("He fallado! Intentando avisar al administrador por Telegram...")
+            bot.send_message(cnf.admin_id, u'\U0001F4A5'+'¡Me he caído! '+u'\U0001F631\n'+str(e))
+            bot.send_message(cnf.admin_id, 'Reiniciando en 10 segundos... /stop')
+            print("Reporte enviado al administrador.")
+            time.sleep(10)
+        except Exception as e:
+            attemps = attemps + 1
+            print("Oh no! No puedo contactar con el administrador! Intento número " + str(attemps) + " de reconectarme.")
+            if attemps <= maxAttemps and attemps <= 10: # 10 intentos cada 10 segundos...
+                print("Reiniciando en 10 segundos...")
+                time.sleep(10)
+            elif attemps <= maxAttemps and attemps > 5: # ...luego, el resto de intentos cada 1 minuto...
+                print("Reiniciando en 1 minuto...")
+                time.sleep(60)
+            else: # ...tras los 10 intentos, para el Bot.
+                print("Sigo sin poder reconectarme. Apagando Bot... ):")
+                #global stop
+                stop = True
 
     finally:
         if connection is not None:
