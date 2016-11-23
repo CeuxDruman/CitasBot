@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import telebot              # Importamos la librer?a
-from telebot import types   # Y los tipos especiales de esta
-#import telegram
+from telebot import TeleBot, types   # Importamos lo que vallamos a utilizar de la librería
 import pymysql
 import pymysql.cursors
 import time
@@ -14,17 +12,17 @@ from datetime import date, timedelta, datetime
 
 import cnf
 
-testingMode = False # El modo de testing permite que sólo el admin del mismo (admin_id) lo use mediante chat privado con él
+testingMode = False # El modo de testing permite que sólo el admin del mismo (conf.admin_id) lo use mediante chat privado con él
 stop = False
 attemps = 0 # Número de intentos de reinicio del Bot REALIZADOS tras una pérdida de conexión total a Internet.
 maxAttemps = 25 # Número MÁXIMO de intentos de reinicio del Bot tras una pérdida de conexión total a Internet.
 
 TOKEN = cnf.TOKEN
  
-bot = telebot.TeleBot(TOKEN) # Creamos un bot con nuestro Token
+bot = TeleBot(TOKEN) # Creamos un bot con nuestro Token
 
 def listener(messages): # Definimos un listener para los mensajes
-                        # este se encargar? de realizar la acci?n que indiquemos
+                        # este se encargará de realizar la acción que indiquemos
                         # dentro cada vez que el bot reciba un mensaje
 
     if stop:
@@ -32,8 +30,8 @@ def listener(messages): # Definimos un listener para los mensajes
         sys.exit()
 
     for m in messages:  # Por cada mensaje que recibamos...
-        actText = m.text # Texto que env?a el usuario al bot
-        chat_id = m.chat.id # Anotamos el ID del chat (cada chat tiene uno ?nico)
+        actText = m.text # Texto que envía el usuario al bot
+        chat_id = m.chat.id # Anotamos el ID del chat (cada chat tiene uno único)
         from_id = m.from_user.id
         if m.chat.type == "private":
             if m.content_type == "text":
@@ -46,7 +44,7 @@ def listener(messages): # Definimos un listener para los mensajes
             else:
                 print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + "\""+m.content_type+"\"")
  
-bot.set_update_listener(listener) # Indicamos a la librer?a que lo que hemos definido antes se encargar? de los mensajes
+bot.set_update_listener(listener) # Indicamos a la librería que lo que hemos definido antes se encargará de los mensajes
 
 connection = None
 
@@ -62,26 +60,9 @@ while True:
         else:
             print("Encendiendo Bot...")
             bot.send_message(cnf.admin_id, 'Bot iniciado de nuevo '+u'\U0001F44D')
-        #global attemps
         attemps = 0
 
         print("BOT INICIADO")
-
-        #session = 0
-
-        #with connection.cursor() as cursor:
-        #    sql = "SELECT session FROM `session` WHERE `user`="+m.from_user.username
-        #    cursor.execute(sql)
-        #    if cursor.rowcount > 0:
-        #        row = cursor.fetchone()
-        #        while(row):
-        #            session = row['session']
-        #            row = cursor.fetchone()
-        #    else:
-        #        sql = ("INSERT INTO session (user, session)"
-				    #    "VALUES (" + m.from_user.id + ", " + 0 + ")")
-
-        #if session == 1:
 
         # Session handler -------------
         cita_dict = {}
@@ -217,7 +198,7 @@ while True:
                                 bot.send_message(chat_id, "No hay ninguna cita con el \"Número de cita\" <b>"+str(cita_id)+"</b>.",parse_mode="HTML")
                         connection.close()
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))
 
         def process_mostrar_step(message):
             try:
@@ -340,7 +321,7 @@ while True:
                             bot.send_message(chat_id, "No hay ninguna cita programada para hoy.")
                     connection.close()
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))
 
         @bot.message_handler(commands=['citassemana'])
         def command_citassemana(message):
@@ -409,7 +390,7 @@ while True:
                                 
                     connection.close()
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))
     
         @bot.message_handler(commands=['citastodas'])
         def command_citastodas(message):
@@ -431,7 +412,7 @@ while True:
                             bot.send_message(chat_id, "No hay ninguna cita creada.")
                     connection.close()
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))
 
         @bot.message_handler(commands=['citasfechas'])
         def command_citasfechas(message):
@@ -576,8 +557,7 @@ while True:
                     del operation_dict[chat_id]
                 if chat_id in fechas_dict:
                     del fechas_dict[chat_id]
-                #exc_type, exc_obj, exc_tb = sys.exc_info()
-                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))    \n"+str(exc_tb.tb_lineno) #exc_type, exc_obj, exc_tb = sys.exc_info()
+                bot.reply_to(message, 'Algo ha salido mal al recuperar tus citas '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))    \n"+str(exc_tb.tb_lineno) #exc_type, exc_obj, exc_tb = sys.exc_info()
 
         def process_fecha_step(message):
             try:
@@ -900,7 +880,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')# \n'+str(e))
 
         def process_hora_step(message):
             try:
@@ -967,7 +947,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') # \n'+str(e))
 
         def process_motivo_step(message):
             try:
@@ -1006,7 +986,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')# + '\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622')# \n'+str(e))
 
         def process_lugar_step(message):
             try:
@@ -1044,7 +1024,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') # \n'+str(e))
 
         def process_direccion_step(message):
             try:
@@ -1090,7 +1070,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') # \n'+str(e))
 
         def process_interesado_step(message):
             try:
@@ -1140,7 +1120,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') #\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622') # \n'+str(e))
 
         def process_acompanantes_step(message):
             try:
@@ -1311,7 +1291,7 @@ while True:
                     del operation_dict[chat_id]
                     if chat_id in cita_dict:
                         del cita_dict[chat_id]
-                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')#\n'+str(e)+"\nQuery: "+sql)
+                bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e)+"\nQuery: "+sql)
 
         # ------------------- END: /citascrear ----------------------- #
 
@@ -1414,7 +1394,7 @@ while True:
                 if chat_id in modificar_dict:
                     del modificar_dict[chat_id]
                 markup = types.ReplyKeyboardHide(selective=False)
-                bot.reply_to(message, 'Algo ha salido mal al modificar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador', reply_markup=markup)#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al modificar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador', reply_markup=markup)# \n'+str(e))
 
         def process_modificar_step(message):
             try:
@@ -1798,7 +1778,7 @@ while True:
 
                         bot.send_message(chat_id, reply,parse_mode="HTML")
             except Exception as e:
-                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')#\n'+str(e))
+                bot.reply_to(message, 'Algo ha salido mal al eliminar tu cita '+u'\U0001F605' + ' Inténtalo de nuevo más tarde o avisa a mi creador.')# \n'+str(e))
 
         def process_eliminar_step(message):
             try:
@@ -1881,7 +1861,7 @@ while True:
                     bot.send_message(cnf.admin_id, 'testingMode DESACTIVADO '+u'\U0000274E')#\n'+str(e))
                 else:
                     testingMode = True
-                    bot.send_message(cnf.admin_id, 'testingMode ACTIVADO '+u'\U00002705')#\n'+str(e))
+                    bot.send_message(cnf.admin_id, 'testingMode ACTIVADO '+u'\U00002705')# \n'+str(e))
 
         
         @bot.message_handler(commands=['stop']) # Emergency STOP
@@ -1891,26 +1871,7 @@ while True:
                 chat_id = message.chat.id
                 global stop
                 stop = True
-               
 
-        #session = 0
-        #with connection.cursor() as cursor:
-        #    sql = "SELECT session FROM `session` WHERE `user`="+str(message.from_user.id)
-        #    cursor.execute(sql)
-        #    if cursor.rowcount > 0:
-        #        row = cursor.fetchone()
-        #        while(row):
-        #            session = row['session']
-        #            row = cursor.fetchone()
-        #if session is not 0:
-        #    sql = "UPDATE session SET session="+str(0)+" WHERE user="+from_id
-        #    with connection.cursor() as cursor:
-        #        cursor.execute(sql)
-        #        if cursor.connection == True:
-        #            reply = "Tu operación actual ha sido cancelada."
-        #        else:
-        #            reply = "No hemos podido cancelar tu operación, intentalo de nuevo más tarde."
-        #    bot.forward_message(chat_id, chat_id, message.id)
 
         def database_connection():
             global connection
@@ -1924,51 +1885,12 @@ while True:
         def testing(message):
             chat_id = message.chat.id
             if chat_id != cnf.admin_id and testingMode == True:
-                bot.send_message(chat_id, u'\U0001F6B7'+' Sorry @' + message.from_user.username + '!, I\'m actually re-writing my bot from PHP to Python! It\'ll be able soon! (:')
+                bot.send_message(chat_id, u'\U0001F6B7'+' Sorry @' + message.from_user.username + '!, I\'m working on improving this Bot! It\'ll be able soon! (:')
                 return False
             else:
                 return True
 
-        #def session(message):
-        #    #session = 0
-        #    chat_id = message.chat.id
-        #    with connection.cursor() as cursor:
-        #        session = 0
-        #        sql = "SELECT session FROM `session` WHERE `user`="+str(message.from_user.id)
-        #        cursor.execute(sql)
-        #        if cursor.rowcount > 0:
-        #            row = cursor.fetchone()
-        #            while(row):
-        #                session = row['session']
-        #                row = cursor.fetchone()
-        #        else:
-        #            sql = ("INSERT INTO session (user, session)"
-				    #        "VALUES (" + str(message.from_user.id) + ", " + str(0) + ")")
-        #            with connection.cursor() as cursor:
-        #                cursor.execute(sql)
-        #                connection.commit()
-
-        #            #    if cursor.connection == True:
-        #            #        reply = "¡Cita creada!"
-        #            #    else:
-        #            #        reply = "¡Ups! Algo ha fallado mientras creaba tu Cita. Inténtalo de nuevo más tarde o avisa a mi creador."
-        #            #bot.send_message(chat_id, reply)
-        #    if session == 0:
-        #        return True
-        #    else:
-        #        sessionAction(message, session)
-        #        return False
-        
-        #def sessionAction(message, session):
-
-        #    if session == 1: # ESPERANDO A QUE CITA SEA ENVIADA PARA CREARLA
-        #        if str(message.text).startswith('Día:'):
-        #            bot.send_message(chat_id, "¡Perfecto!")
-        #        else:
-        #            bot.send_message(chat_id, "Por favor, envíame la cita con el formato que te envíe. Es importante que no cambies el formato. (Puedes cancelar la operación con el comando /cancelar )")
-        #    #elif session == 2:
-
-        bot.polling(none_stop=True)       # E iniciamos nuestro bot para que est? atento a los mensajes
+        bot.polling(none_stop=True)       # E iniciamos nuestro bot para que esté atento a los mensajes
 
     except Exception as e:
         try:
@@ -1988,7 +1910,6 @@ while True:
                 time.sleep(60)
             else: # ...tras los 10 intentos, para el Bot.
                 print("Sigo sin poder reconectarme. Apagando Bot... ):")
-                #global stop
                 stop = True
 
     finally:
