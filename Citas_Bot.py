@@ -112,6 +112,14 @@ while True:
 
         operation_dict = {}
         # -----------------------------
+        
+        @bot.message_handler(commands=['start'])
+        def command_start(message):
+            if testing(message):
+                chat_id = message.chat.id
+                from_username = message.from_user.username
+                reply = "¡Hola @"+from_username+", empezamos cuando quieras! Si no sabes por dónde empezar usa el comando /ayuda"
+                bot.reply_to(message, reply)
     
         @bot.message_handler(commands=['ayuda'])
         def command_ayuda(message):
