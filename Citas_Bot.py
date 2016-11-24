@@ -2025,7 +2025,8 @@ while True:
     except Exception as e:
         try:
             print("He fallado! Intentando avisar al administrador por Telegram...")
-            bot.send_message(cnf.admin_id, u'\U0001F4A5'+'¡Me he caído! '+u'\U0001F631\n'+str(e))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            bot.send_message(cnf.admin_id, u'\U0001F4A5'+'¡Me he caído! '+u'\U0001F631\n'+str(e)+'\n'+str(exc_tb.tb_lineno))
             bot.send_message(cnf.admin_id, 'Reiniciando en 10 segundos... /stop')
             print("Reporte enviado al administrador.")
             time.sleep(10)
