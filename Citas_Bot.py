@@ -48,6 +48,122 @@ bot.set_update_listener(listener) # Indicamos a la librería que lo que hemos de
 
 connection = None
 
+
+def alarmaDia():
+    try:
+        fechaHoy = datetime.now()
+        fechaManana = fechaHoy + timedelta(days=1)
+        strFechaManana = fechaManana.strftime('%Y-%m-%d')
+
+        database_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(strFechaManana)+"', '%Y-%m-%d') AND alarmaDia=false"
+            cursor.execute(sql)
+            if cursor.rowcount > 0:
+                row = cursor.fetchone()
+                #if cursor.rowcount == 1: # No podemos enviar, a priori, todas las citas a la vez, porque cada una puede ser de un usuario distinto.
+                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
+                #else:
+                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programadas estas citas para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
+                while(row):
+                    if row['hora'] is None:
+                        hora = ""
+                    else:
+                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                    if row['direccion'] is None:
+                        direccion = ""
+                    else:
+                        direccion = str(row['direccion'])
+
+                    if row['acompanantes'] is None:
+                        acompanantes = ""
+                    else:
+                        acompanantes = str(row['acompanantes'])
+
+                    #reply = "----------------------\n"
+                    if len(row['creador']) > 8:
+                        reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
+                    else:
+                        reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
+                    reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+                        "Día: <b>" + row['dia'].strftime("%d/%m/%Y") + "</b>\n"
+                        "Hora: " + hora + "\n"
+                        "Motivo: " + row['motivo'] + "\n"
+                        "Lugar: " + row['lugar'] + "\n"
+                        "Dirección: " + direccion + "\n"
+                        "Interesado: " + row['interesado'] + "\n"
+                        "Acompañantes: " + acompanantes + "\n"
+                        )
+                    bot.send_message(row['creador'], reply, parse_mode="HTML")
+                    row = cursor.fetchone()
+                    
+            #else:
+            #    bot.send_message(cnf.admin_id, "No hay ninguna cita para mañana.", parse_mode="HTML")
+        connection.close()
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaDia\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+
+def alarmaHora():
+    try:
+        fechaHoy = datetime.now()
+        fechaHora = fechaHoy + timedelta(hours=1)
+        horaActual = fechaHoy.strftime('%H:%M')
+        dentroDeUnaHora = fechaHora.strftime('%H:%M')
+        strFechaHoy = fechaHoy.strftime('%Y-%m-%d')
+
+        database_connection()
+        with connection.cursor() as cursor:
+            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(strFechaHoy)+"', '%Y-%m-%d') AND ( `hora` BETWEEN '"+str(horaActual)+"' AND '"+str(dentroDeUnaHora)+"' ) AND alarmaDia=false"
+            cursor.execute(sql)
+            if cursor.rowcount > 0:
+                row = cursor.fetchone()
+                #if cursor.rowcount == 1:
+                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
+                #else:
+                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programadas estas citas " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
+                while(row):
+                    if row['hora'] is None:
+                        hora = ""
+                    else:
+                        hora = str(row['hora']).split(":",2)[0] + ":" + str(row['hora']).split(":",2)[1]
+
+                    if row['direccion'] is None:
+                        direccion = ""
+                    else:
+                        direccion = str(row['direccion'])
+
+                    if row['acompanantes'] is None:
+                        acompanantes = ""
+                    else:
+                        acompanantes = str(row['acompanantes'])
+
+                    #reply = "----------------------\n"
+                    if len(row['creador']) > 8:
+                        reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
+                    else:
+                        reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
+                    reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
+                        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                        "Hora: <b>" + hora + "</b>\n"
+                        "Motivo: " + row['motivo'] + "\n"
+                        "Lugar: " + row['lugar'] + "\n"
+                        "Dirección: " + direccion + "\n"
+                        "Interesado: " + row['interesado'] + "\n"
+                        "Acompañantes: " + acompanantes + "\n"
+                        )
+                    bot.send_message(row['creador'], reply,parse_mode="HTML")
+                    row = cursor.fetchone()
+                    
+            #else:
+            #    bot.send_message(cnf.admin_id, "No hay ninguna cita dentro de una hora.",parse_mode="HTML")
+        connection.close()
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaHora\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+
+
 while True:
     try:
         if stop:
@@ -1541,7 +1657,7 @@ while True:
                             markup = types.ReplyKeyboardHide(selective=False)
                             bot.send_message(chat_id, "Esto es lo que hay ahora: <b>" + str(datoOriginal) + "</b>",parse_mode="HTML")
 
-                            msg = bot.reply_to(message, "Introduce ahora el nuevo dato: /cancelar", reply_markup=markup)
+                            msg = bot.reply_to(message, "Introduce el nuevo dato: /cancelar", reply_markup=markup)
 
                             bot.register_next_step_handler(msg, process_accion_modificar_step)
                         
@@ -1568,7 +1684,7 @@ while True:
 
                     if not match:
                         bot.reply_to(message, "Eh eh, sólo texto por favor.")
-                        bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                        bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                         bot.register_next_step_handler(message, process_accion_modificar_step)
                         return
 
@@ -1581,7 +1697,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "Debes introducir una fecha válida con el formato: " + str(time.strftime('%d/%m/%Y')))
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1602,7 +1718,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message,"<b>" + nuevoDato + "</b> no es una fecha válida.",parse_mode="HTML")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1613,7 +1729,7 @@ while True:
                     
                         if not match:
                             bot.reply_to(message, "Debes introducir una hora válida con el formato: " + str(time.strftime('%H:%M')))
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1631,7 +1747,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "<b>" + nuevoDato + "</b> no es una hora válida.",parse_mode="HTML")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1640,7 +1756,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El motivo no puede ser mayor de 45 caracteres.")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1652,7 +1768,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El lugar no puede ser mayor de 50 caracteres.")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1664,7 +1780,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El lugar no puede ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1676,7 +1792,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "El interesado no puede ser mayor de 45 caracteres.")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1688,7 +1804,7 @@ while True:
 
                         if not match:
                             bot.reply_to(message, "Los acompañantes no pueden ser mayor de 100 caracteres.")
-                            bot.send_message(chat_id, "Introduce ahora el nuevo dato: /cancelar")
+                            bot.send_message(chat_id, "Introduce el nuevo dato: /cancelar")
                             bot.register_next_step_handler(message, process_accion_modificar_step)
                             return
 
@@ -1828,6 +1944,20 @@ while True:
                 if chat_id in operation_dict:
                     del operation_dict[chat_id]
                 bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
+
+
+        @bot.message_handler(commands=['alarmadia'])
+        def command_alarmadia(message):
+            from_id = message.from_user.id
+            if from_id == cnf.admin_id:
+                alarmaDia()
+
+        @bot.message_handler(commands=['alarmahora'])
+        def command_alarmahora(message):
+            from_id = message.from_user.id
+            if from_id == cnf.admin_id:
+                alarmaHora()
+
 
         @bot.message_handler(commands=['cancelar'])
         def command_cancelar(message):
