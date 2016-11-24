@@ -223,18 +223,18 @@ while True:
             if testing(message):
                 chat_id = message.chat.id
                 reply = ("/citashoy: Muestra todas las citas del grupo programadas para el día actual."
-			        "\n\n/citassemana: Muestra todas las citas del grupo programadas para la semana actual."
-				    "\n\n/citasfechas: Muestra todas las citas del grupo programadas para la fecha dada (Ejemplo: \"/citasfecha 12/04/2016\") o entre las 2 fechas dadas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
-				    "\n\n/citastodas: Muestra un resumen de todas las citas del grupo."
-				    "\n\n/citasmostrar: Muestra una cita en concreto dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmostrar 1\")"
-				    # Personalizar los siguientes comandos para que SOLO lo puedan mostrar los admins.
-				    "\n\n/citascrear: Permite crear una nueva cita."
-				    "\n\n/citasmodificar: Permite modificar una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmodificar 1\")"
-				    "\n\n/citaseliminar: Permite eliminar por completo una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citaseliminar 1\")"
-				    #"\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
+                    "\n\n/citassemana: Muestra todas las citas del grupo programadas para la semana actual."
+                    "\n\n/citasfechas: Muestra todas las citas del grupo programadas para la fecha dada (Ejemplo: \"/citasfecha 12/04/2016\") o entre las 2 fechas dadas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
+                    "\n\n/citastodas: Muestra un resumen de todas las citas del grupo."
+                    "\n\n/citasmostrar: Muestra una cita en concreto dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmostrar 1\")"
+                    # Personalizar los siguientes comandos para que SOLO lo puedan mostrar los admins.
+                    "\n\n/citascrear: Permite crear una nueva cita."
+                    "\n\n/citasmodificar: Permite modificar una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmodificar 1\")"
+                    "\n\n/citaseliminar: Permite eliminar por completo una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citaseliminar 1\")"
+                    #"\n\n/citasasitir: Permite añadirte como acompañante a una cita dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasacompañar 1\")"
                     # # # #
                     "\n\n<b>NOTA1</b>: Los comandos que requieren de algún dato adicional pueden ser pasados junto con el comando o enviando sólo el comando, en cuyo caso se te preguntará por el dato solicitado a continuación."
-				    "\n\n<b>NOTA2</b>: Puedes cancelar operaciones en curso mediante el comando /cancelar ."
+                    "\n\n<b>NOTA2</b>: Puedes cancelar operaciones en curso mediante el comando /cancelar ."
                     )
                 bot.send_message(chat_id, reply,parse_mode="HTML")
     
@@ -278,7 +278,7 @@ while True:
                     else:
                         database_connection()
                         with connection.cursor() as cursor:
-                            sql = "SELECT * FROM `cita` WHERE `id`="+cita_id
+                            sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND `id`="+cita_id
                             cursor.execute(sql)
                             if cursor.rowcount > 0:
                                 row = cursor.fetchone()
@@ -300,13 +300,13 @@ while True:
                                         acompanantes = str(row['acompanantes'])
 
                                     reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						                "Hora: " + hora + "\n"
-						                "Motivo: " + row['motivo'] + "\n"
-						                "Lugar: " + row['lugar'] + "\n"
-						                "Dirección: " + direccion + "\n"
-						                "Interesado: " + row['interesado'] + "\n"
-						                "Acompañantes: " + acompanantes + "\n"
+                                        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                        "Hora: " + hora + "\n"
+                                        "Motivo: " + row['motivo'] + "\n"
+                                        "Lugar: " + row['lugar'] + "\n"
+                                        "Dirección: " + direccion + "\n"
+                                        "Interesado: " + row['interesado'] + "\n"
+                                        "Acompañantes: " + acompanantes + "\n"
                                         )
                                     row = cursor.fetchone()
                                 bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -344,7 +344,7 @@ while True:
 
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "SELECT * FROM `cita` WHERE `id`="+numeroCita
+                        sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND `id`="+numeroCita
                         cursor.execute(sql)
                         if cursor.rowcount > 0:
                             row = cursor.fetchone()
@@ -366,13 +366,13 @@ while True:
                                     acompanantes = str(row['acompanantes'])
 
                                 reply = ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						            "Hora: " + hora + "\n"
-						            "Motivo: " + row['motivo'] + "\n"
-						            "Lugar: " + row['lugar'] + "\n"
-						            "Dirección: " + direccion + "\n"
-						            "Interesado: " + row['interesado'] + "\n"
-						            "Acompañantes: " + acompanantes + "\n"
+                                    "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                    "Hora: " + hora + "\n"
+                                    "Motivo: " + row['motivo'] + "\n"
+                                    "Lugar: " + row['lugar'] + "\n"
+                                    "Dirección: " + direccion + "\n"
+                                    "Interesado: " + row['interesado'] + "\n"
+                                    "Acompañantes: " + acompanantes + "\n"
                                     )
                                 row = cursor.fetchone()
                             bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -400,7 +400,7 @@ while True:
 
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaHoy)+"', '%Y-%m-%d')" # CURDATE()
+                        sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaHoy)+"', '%Y-%m-%d')" # CURDATE()
                         cursor.execute(sql)
                         if cursor.rowcount > 0:
                             row = cursor.fetchone()
@@ -423,13 +423,13 @@ while True:
 
                                 reply += "----------------------\n"
                                 reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						            "Hora: " + hora + "\n"
-						            "Motivo: " + row['motivo'] + "\n"
-						            "Lugar: " + row['lugar'] + "\n"
-						            "Dirección: " + direccion + "\n"
-						            "Interesado: " + row['interesado'] + "\n"
-						            "Acompañantes: " + acompanantes + "\n"
+                                    "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                    "Hora: " + hora + "\n"
+                                    "Motivo: " + row['motivo'] + "\n"
+                                    "Lugar: " + row['lugar'] + "\n"
+                                    "Dirección: " + direccion + "\n"
+                                    "Interesado: " + row['interesado'] + "\n"
+                                    "Acompañantes: " + acompanantes + "\n"
                                     )
                                 row = cursor.fetchone()
                             bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -467,7 +467,7 @@ while True:
                         if chat_id in fechas_dict:
                             del fechas_dict[chat_id]
                             
-                        sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(firstDay)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(lastDay)+"', '%Y-%m-%d') )"
+                        sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(firstDay)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(lastDay)+"', '%Y-%m-%d') )"
 
                         cursor.execute(sql)
                         if cursor.rowcount > 0:
@@ -491,13 +491,13 @@ while True:
 
                                 reply += "----------------------\n"
                                 reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						            "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						            "Hora: " + hora + "\n"
-						            "Motivo: " + row['motivo'] + "\n"
-						            "Lugar: " + row['lugar'] + "\n"
-						            "Dirección: " + direccion + "\n"
-						            "Interesado: " + row['interesado'] + "\n"
-						            "Acompañantes: " + acompanantes + "\n"
+                                    "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                    "Hora: " + hora + "\n"
+                                    "Motivo: " + row['motivo'] + "\n"
+                                    "Lugar: " + row['lugar'] + "\n"
+                                    "Dirección: " + direccion + "\n"
+                                    "Interesado: " + row['interesado'] + "\n"
+                                    "Acompañantes: " + acompanantes + "\n"
                                     )
                                 row = cursor.fetchone()
                             bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -515,7 +515,7 @@ while True:
                     chat_id = message.chat.id
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "SELECT * FROM `cita`"
+                        sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)
                         cursor.execute(sql)
                         if cursor.rowcount > 0:
                             reply = "Resumen de todas las citas:\n"
@@ -586,7 +586,7 @@ while True:
 
                                 fecha = year + "-" + month + "-" + day
 
-                                sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fecha)+"', '%Y-%m-%d')"
+                                sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fecha)+"', '%Y-%m-%d')"
                             else:
                                 fecha1 = fechas.split(" a ",1)[0]
                                 fecha2 = fechas.split(" a ",1)[1]
@@ -625,7 +625,7 @@ while True:
 
                                 fechaDos = year + "-" + month + "-" + day
 
-                                sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
+                                sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
                             cursor.execute(sql)
                             if cursor.rowcount > 0:
                                 row = cursor.fetchone()
@@ -651,13 +651,13 @@ while True:
 
                                     reply += "----------------------\n"
                                     reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						                "Hora: " + hora + "\n"
-						                "Motivo: " + row['motivo'] + "\n"
-						                "Lugar: " + row['lugar'] + "\n"
-						                "Dirección: " + direccion + "\n"
-						                "Interesado: " + row['interesado'] + "\n"
-						                "Acompañantes: " + acompanantes + "\n"
+                                        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                        "Hora: " + hora + "\n"
+                                        "Motivo: " + row['motivo'] + "\n"
+                                        "Lugar: " + row['lugar'] + "\n"
+                                        "Dirección: " + direccion + "\n"
+                                        "Interesado: " + row['interesado'] + "\n"
+                                        "Acompañantes: " + acompanantes + "\n"
                                         )
                                     row = cursor.fetchone()
                                 bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -791,7 +791,7 @@ while True:
                             if chat_id in fechas_dict:
                                 del fechas_dict[chat_id]
                             
-                            sql = "SELECT * FROM `cita` WHERE ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
+                            sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND ( DATE_FORMAT(`dia`, '%Y-%m-%d') BETWEEN STR_TO_DATE('"+str(fechaUno)+"', '%Y-%m-%d') AND STR_TO_DATE('"+str(fechaDos)+"', '%Y-%m-%d') )"
 
                             cursor.execute(sql)
                             if cursor.rowcount > 0:
@@ -815,13 +815,13 @@ while True:
 
                                     reply += "----------------------\n"
                                     reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						                "Hora: " + hora + "\n"
-						                "Motivo: " + row['motivo'] + "\n"
-						                "Lugar: " + row['lugar'] + "\n"
-						                "Dirección: " + direccion + "\n"
-						                "Interesado: " + row['interesado'] + "\n"
-						                "Acompañantes: " + acompanantes + "\n"
+                                        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                        "Hora: " + hora + "\n"
+                                        "Motivo: " + row['motivo'] + "\n"
+                                        "Lugar: " + row['lugar'] + "\n"
+                                        "Dirección: " + direccion + "\n"
+                                        "Interesado: " + row['interesado'] + "\n"
+                                        "Acompañantes: " + acompanantes + "\n"
                                         )
                                     row = cursor.fetchone()
                                 bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -848,7 +848,7 @@ while True:
                             if chat_id in fechas_dict:
                                 del fechas_dict[chat_id]
                             
-                            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaDB)+"', '%Y-%m-%d')"
+                            sql = "SELECT * FROM `cita` WHERE `creador`="+str(chat_id)+" AND DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(fechaDB)+"', '%Y-%m-%d')"
 
                             cursor.execute(sql)
                             if cursor.rowcount > 0:
@@ -872,13 +872,13 @@ while True:
 
                                     reply += "----------------------\n"
                                     reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
-						                "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
-						                "Hora: " + hora + "\n"
-						                "Motivo: " + row['motivo'] + "\n"
-						                "Lugar: " + row['lugar'] + "\n"
-						                "Dirección: " + direccion + "\n"
-						                "Interesado: " + row['interesado'] + "\n"
-						                "Acompañantes: " + acompanantes + "\n"
+                                        "Día: " + row['dia'].strftime("%d/%m/%Y") + "\n"
+                                        "Hora: " + hora + "\n"
+                                        "Motivo: " + row['motivo'] + "\n"
+                                        "Lugar: " + row['lugar'] + "\n"
+                                        "Dirección: " + direccion + "\n"
+                                        "Interesado: " + row['interesado'] + "\n"
+                                        "Acompañantes: " + acompanantes + "\n"
                                         )
                                     row = cursor.fetchone()
                                 bot.send_message(chat_id, reply,parse_mode="HTML")
@@ -1241,7 +1241,7 @@ while True:
         def process_acompanantes_step(message):
             try:
                 chat_id = message.chat.id
-                from_id = message.from_user.id
+                #from_id = message.from_user.id
                 if chat_id in operation_dict:
                 
                     acompanantes = message.text
@@ -1309,11 +1309,11 @@ while True:
                             sql += "', '" + cita.direccion + "', '" + cita.interesado
 
                         if cita.acompanantes is None:
-                            sql += "',  '" + str(from_id) + "', false, false)"
+                            sql += "',  '" + str(chat_id) + "', false, false)"
                         else:
                             if not isinstance(cita.acompanantes, str):
                                 cita.acompanantes = cita.acompanantes.decode('utf-8')
-                            sql += "', '" + cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
+                            sql += "', '" + cita.acompanantes + "',  '" + str(chat_id) + "', false, false)"
 
                         if chat_id in operation_dict:
                             del operation_dict[chat_id]
@@ -1377,11 +1377,11 @@ while True:
                             sql += "', '" +  cita.direccion + "', '" +  cita.interesado
 
                         if cita.acompanantes is None:
-                            sql += "',  '" + str(from_id) + "', false, false)"
+                            sql += "',  '" + str(chat_id) + "', false, false)"
                         else:
                             if not isinstance(cita.acompanantes, str):
                                 cita.acompanantes = cita.acompanantes.decode('utf-8')
-                            sql += "', '" +  cita.acompanantes + "',  '" + str(from_id) + "', false, false)"
+                            sql += "', '" +  cita.acompanantes + "',  '" + str(chat_id) + "', false, false)"
 
                         if chat_id in operation_dict:
                             del operation_dict[chat_id]
@@ -1453,12 +1453,12 @@ while True:
                         # Primero comprobamos que exista una cita con ese ID
                         database_connection()
                         with connection.cursor() as cursor:
-                            sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE id ='" + str(cita_id) + "' LIMIT 1)"
+                            sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE `creador`="+str(chat_id)+" AND id ='" + str(cita_id) + "' LIMIT 1)"
                             cursor.execute(sql)
                             row = cursor.fetchone()
                             connection.close()
                             #bot.send_message(chat_id, "Aquí tienes: " + str(row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)")) )
-                            if row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)") == 1:
+                            if row.get("EXISTS(SELECT 1 FROM cita WHERE `creador`="+str(chat_id)+" AND id ='"+str(cita_id)+"' LIMIT 1)") == 1:
 
                                 modificacion = Modificacion(cita_id)
                                 modificar_dict[chat_id] = modificacion
@@ -1538,12 +1538,12 @@ while True:
                     # Primero comprobamos que exista una cita con ese ID
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE id ='" + str(numeroCita) + "' LIMIT 1)"
+                        sql = "SELECT EXISTS(SELECT 1 FROM cita WHERE `creador`="+str(chat_id)+" AND id ='" + str(numeroCita) + "' LIMIT 1)"
                         cursor.execute(sql)
                         row = cursor.fetchone()
                         connection.close()
                         #bot.send_message(chat_id, "Aquí tienes: " + str(row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(cita_id)+"' LIMIT 1)")) )
-                        if row.get("EXISTS(SELECT 1 FROM cita WHERE id ='"+str(numeroCita)+"' LIMIT 1)") == 1:
+                        if row.get("EXISTS(SELECT 1 FROM cita WHERE `creador`="+str(chat_id)+" AND id ='"+str(numeroCita)+"' LIMIT 1)") == 1:
 
                             #if chat_id in operation_dict:
                             #    del operation_dict[chat_id]
@@ -1635,7 +1635,7 @@ while True:
 
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "SELECT " + dato + " FROM `cita` WHERE `id`="+str(modificacion.numeroCita)
+                        sql = "SELECT " + dato + " FROM `cita` WHERE `id`="+str(modificacion.numeroCita)+" AND `creador`="+str(chat_id)
 
                         #if chat_id in modificar_dict:
                         #    del modificar_dict[chat_id]
@@ -1818,7 +1818,7 @@ while True:
 
                     database_connection()
                     with connection.cursor() as cursor:
-                        sql = "UPDATE cita SET "+dato+"='"+nuevoDato+"' WHERE id="+str(numeroCita)
+                        sql = "UPDATE cita SET "+dato+"='"+nuevoDato+"' WHERE id="+str(numeroCita)+" AND `creador`="+str(chat_id)
 
                         cursor.execute(sql)
                         modified = cursor.rowcount # SELECT ROW_COUNT()
@@ -1878,7 +1878,7 @@ while True:
                     elif not cita_id.isdigit():
                         bot.send_message(chat_id, "Debes indicar un \"Número de cita\" numérico válido, por ejemplo: \"/citaseliminar 6\"")
                     else:
-                        sql = "DELETE FROM cita WHERE id=" + cita_id
+                        sql = "DELETE FROM cita WHERE `creador`="+str(chat_id)+" AND id=" + cita_id
 
                         database_connection()
                         with connection.cursor() as cursor:
@@ -1922,7 +1922,7 @@ while True:
                     if chat_id in operation_dict:
                         del operation_dict[chat_id]
 
-                    sql = "DELETE FROM cita WHERE id=" + numeroCita
+                    sql = "DELETE FROM cita WHERE id=" + numeroCita + " AND `creador`="+str(chat_id)
 
                     database_connection()
                     with connection.cursor() as cursor:
