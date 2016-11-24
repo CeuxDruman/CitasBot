@@ -39,3 +39,9 @@ if not isinstance(cita.motivo, str):
 ```
 
 You don't have to take any special care when retrieving your data from the database.
+
+## Example
+I have my own Bot running 24/7 exactly with this code, please [check it out](http://telegram.me/Citas_Bot)!
+
+## Contact
+Please, feel free to contact me by my GitHub profile methods or by [chatting me on Telegram](http://telegram.me/CeuxDruman) for any doubt or question about my Bot functionality or code.
