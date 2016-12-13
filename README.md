@@ -14,7 +14,7 @@ This Telegram Bot will let group admins create, modify, delete, etc... any kind 
 ## Commands currently in development
 * __/citasasistir__: Apuntarse como acompañante a una cita, dado el "Número de cita" de la misma.
 
-## Features currently in development
+## Currently avalaible features
 * __1 day before notification__: Users will receive a notification reminding they have a meeting the next day.
 * __1 hour before notification__: Users will receive a notification reminding they have a meeting in one hour.
 

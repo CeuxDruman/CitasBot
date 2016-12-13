@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from telebot import TeleBot, types   # Importamos lo que vallamos a utilizar de la librería
+from telebot import TeleBot, types
 import pymysql
 import pymysql.cursors
 import time
@@ -9,29 +9,30 @@ import re
 import sys
 import traceback
 from datetime import date, timedelta, datetime
+import threading
 
 import cnf
 
-testingMode = False # El modo de testing permite que sólo el admin del mismo (conf.admin_id) lo use mediante chat privado con él
+testingMode = False # El modo de testing permite que sólo el admin del mismo (conf.admin_id) lo use mediante chat privado con él.
 stop = False
 attemps = 0 # Número de intentos de reinicio del Bot REALIZADOS tras una pérdida de conexión total a Internet.
 maxAttemps = 25 # Número MÁXIMO de intentos de reinicio del Bot tras una pérdida de conexión total a Internet.
+notifications = True # Mientras sea True, cada 5 minutos el bot comprobará si dentro de 1 hora o de 1 día hay citas programadas e informará a los creadores de estas mediante un mensaje.
+notificationsCheck = 300 # Cada X segundos se comprobará si hay Citas que notificar, donde X es esta cifra.
 
 TOKEN = cnf.TOKEN
  
-bot = TeleBot(TOKEN) # Creamos un bot con nuestro Token
+bot = TeleBot(TOKEN)
 
-def listener(messages): # Definimos un listener para los mensajes
-                        # este se encargará de realizar la acción que indiquemos
-                        # dentro cada vez que el bot reciba un mensaje
+def listener(messages):
 
     if stop:
         print("BOT APAGADO")
         sys.exit()
 
-    for m in messages:  # Por cada mensaje que recibamos...
-        actText = m.text # Texto que envía el usuario al bot
-        chat_id = m.chat.id # Anotamos el ID del chat (cada chat tiene uno único)
+    for m in messages:
+        actText = m.text
+        chat_id = m.chat.id
         from_id = m.from_user.id
         if m.chat.type == "private":
             if m.content_type == "text":
@@ -44,10 +45,42 @@ def listener(messages): # Definimos un listener para los mensajes
             else:
                 print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + "\""+m.content_type+"\"")
  
-bot.set_update_listener(listener) # Indicamos a la librería que lo que hemos definido antes se encargará de los mensajes
+bot.set_update_listener(listener)
 
 connection = None
 
+def database_connection():
+            global connection
+            connection = pymysql.connect(host=cnf.mysql['host'],
+                                            user=cnf.mysql['user'],
+                                            password=cnf.mysql['password'],
+                                            db=cnf.mysql['db'],
+                                            charset=cnf.mysql['charset'],
+                                            cursorclass=pymysql.cursors.DictCursor)
+
+def testing(message):
+    chat_id = message.chat.id
+    if chat_id != cnf.admin_id and testingMode == True:
+        bot.send_message(chat_id, u'\U0001F6B7'+' Sorry @' + message.from_user.username + '!, I\'m working on improving this Bot! It\'ll be able soon! (:')
+        return False
+    else:
+        return True
+
+def run_notifications():
+
+    def check_alarmas():
+        if notifications:
+            #print('Comprobando alarmas...')
+            alarmaHora()
+            #print('alarmaHora comprobadas')
+            alarmaDia()
+            #print('alarmaDia comprobadas')
+
+        t = threading.Timer(float(notificationsCheck), check_alarmas)
+        t.start()
+
+    t = threading.Timer(float(notificationsCheck), check_alarmas)
+    t.start()
 
 def alarmaDia():
     try:
@@ -55,16 +88,15 @@ def alarmaDia():
         fechaManana = fechaHoy + timedelta(days=1)
         strFechaManana = fechaManana.strftime('%Y-%m-%d')
 
+        ids = []
+
         database_connection()
         with connection.cursor() as cursor:
             sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(strFechaManana)+"', '%Y-%m-%d') AND alarmaDia=false"
             cursor.execute(sql)
             if cursor.rowcount > 0:
                 row = cursor.fetchone()
-                #if cursor.rowcount == 1: # No podemos enviar, a priori, todas las citas a la vez, porque cada una puede ser de un usuario distinto.
-                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
-                #else:
-                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programadas estas citas para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
+
                 while(row):
                     if row['hora'] is None:
                         hora = ""
@@ -81,7 +113,6 @@ def alarmaDia():
                     else:
                         acompanantes = str(row['acompanantes'])
 
-                    #reply = "----------------------\n"
                     if len(row['creador']) > 8:
                         reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
                     else:
@@ -96,11 +127,24 @@ def alarmaDia():
                         "Acompañantes: " + acompanantes + "\n"
                         )
                     bot.send_message(row['creador'], reply, parse_mode="HTML")
+
+                    ids.append(row['id'])
+
                     row = cursor.fetchone()
-                    
-            #else:
-            #    bot.send_message(cnf.admin_id, "No hay ninguna cita para mañana.", parse_mode="HTML")
+
         connection.close()
+
+        # Ahora que hemos avisado, marcamos las Citas como avisadas
+        if ids:
+            database_connection()
+            with connection.cursor() as cursor:
+                for id in ids:
+                    sql = "UPDATE cita SET alarmaDia=true WHERE id="+str(id)
+                    cursor.execute(sql)
+                    connection.commit()
+                        
+            connection.close()
+
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaDia\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
@@ -113,16 +157,15 @@ def alarmaHora():
         dentroDeUnaHora = fechaHora.strftime('%H:%M')
         strFechaHoy = fechaHoy.strftime('%Y-%m-%d')
 
+        ids = []
+
         database_connection()
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(strFechaHoy)+"', '%Y-%m-%d') AND ( `hora` BETWEEN '"+str(horaActual)+"' AND '"+str(dentroDeUnaHora)+"' ) AND alarmaDia=false"
+            sql = "SELECT * FROM `cita` WHERE DATE_FORMAT(`dia`, '%Y-%m-%d')=STR_TO_DATE('"+str(strFechaHoy)+"', '%Y-%m-%d') AND ( `hora` BETWEEN '"+str(horaActual)+"' AND '"+str(dentroDeUnaHora)+"' ) AND alarmaHora=false"
             cursor.execute(sql)
             if cursor.rowcount > 0:
                 row = cursor.fetchone()
-                #if cursor.rowcount == 1:
-                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
-                #else:
-                #    reply = u"\U000023F0" + " <b>¡No olvides que tienes programadas estas citas " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
+
                 while(row):
                     if row['hora'] is None:
                         hora = ""
@@ -139,7 +182,6 @@ def alarmaHora():
                     else:
                         acompanantes = str(row['acompanantes'])
 
-                    #reply = "----------------------\n"
                     if len(row['creador']) > 8:
                         reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
                     else:
@@ -154,11 +196,24 @@ def alarmaHora():
                         "Acompañantes: " + acompanantes + "\n"
                         )
                     bot.send_message(row['creador'], reply,parse_mode="HTML")
+
+                    ids.append(row['id'])
+
                     row = cursor.fetchone()
                     
-            #else:
-            #    bot.send_message(cnf.admin_id, "No hay ninguna cita dentro de una hora.",parse_mode="HTML")
         connection.close()
+
+        # Ahora que hemos avisado, marcamos las Citas como avisadas
+        if ids:
+            database_connection()
+            with connection.cursor() as cursor:
+                for id in ids:
+                    sql = "UPDATE cita SET alarmaHora=true WHERE id="+str(id)
+                    cursor.execute(sql)
+                    connection.commit()
+                        
+            connection.close()
+
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaHora\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
@@ -179,6 +234,8 @@ while True:
         attemps = 0
 
         print("BOT INICIADO")
+
+        run_notifications()
 
         # Session handler -------------
         cita_dict = {}
@@ -224,7 +281,7 @@ while True:
                 chat_id = message.chat.id
                 reply = ("/citashoy: Muestra todas las citas del grupo programadas para el día actual."
                     "\n\n/citassemana: Muestra todas las citas del grupo programadas para la semana actual."
-                    "\n\n/citasfechas: Muestra todas las citas del grupo programadas para la fecha dada (Ejemplo: \"/citasfecha 12/04/2016\") o entre las 2 fechas dadas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
+                    "\n\n/citasfechas: Muestra todas las citas del grupo programadas para la fecha dada (Ejemplo: \"/citasfechas 12/04/2016\") o entre las 2 fechas dadas. (Ejemplo: \"/citasfechas 12/04/2016 a 20/04/2016\")"
                     "\n\n/citastodas: Muestra un resumen de todas las citas del grupo."
                     "\n\n/citasmostrar: Muestra una cita en concreto dado el \"Número de cita\" de la misma. (Ejemplo: \"/citasmostrar 1\")"
                     # Personalizar los siguientes comandos para que SOLO lo puedan mostrar los admins.
@@ -235,6 +292,8 @@ while True:
                     # # # #
                     "\n\n<b>NOTA1</b>: Los comandos que requieren de algún dato adicional pueden ser pasados junto con el comando o enviando sólo el comando, en cuyo caso se te preguntará por el dato solicitado a continuación."
                     "\n\n<b>NOTA2</b>: Puedes cancelar operaciones en curso mediante el comando /cancelar ."
+                    # # # #
+                    "\n\n"+u"\U0001F514"+" Te enviaré un mensaje <b>el día antes</b> y <b>1 hora antes</b> de tu Cita para que no se te olvide."
                     )
                 bot.send_message(chat_id, reply,parse_mode="HTML")
     
@@ -1945,20 +2004,6 @@ while True:
                     del operation_dict[chat_id]
                 bot.reply_to(message, 'Algo ha salido mal, hemos tenido que cancelar tu operación '+u'\U0001F622' + ' Si el problema persiste, por favor avisa a mi creador.')# \n'+str(e))
 
-
-        @bot.message_handler(commands=['alarmadia'])
-        def command_alarmadia(message):
-            from_id = message.from_user.id
-            if from_id == cnf.admin_id:
-                alarmaDia()
-
-        @bot.message_handler(commands=['alarmahora'])
-        def command_alarmahora(message):
-            from_id = message.from_user.id
-            if from_id == cnf.admin_id:
-                alarmaHora()
-
-
         @bot.message_handler(commands=['cancelar'])
         def command_cancelar(message):
             if testing(message): #and session(message):
@@ -1984,7 +2029,6 @@ while True:
         def command_testingmode(message):
             from_id = message.from_user.id
             if from_id == cnf.admin_id:
-                chat_id = message.chat.id
                 global testingMode
                 if testingMode == True:
                     testingMode = False
@@ -1993,6 +2037,17 @@ while True:
                     testingMode = True
                     bot.send_message(cnf.admin_id, 'testingMode ACTIVADO '+u'\U00002705')# \n'+str(e))
 
+        @bot.message_handler(commands=['notifications']) # Switch notifications
+        def command_testingmode(message):
+            from_id = message.from_user.id
+            if from_id == cnf.admin_id:
+                global notifications
+                if notifications == True:
+                    notifications = False
+                    bot.send_message(cnf.admin_id, 'notifications DESACTIVADAS '+u'\U0001F515')#\n'+str(e))
+                else:
+                    notifications = True
+                    bot.send_message(cnf.admin_id, 'notifications ACTIVADAS '+u'\U0001F514')# \n'+str(e))
         
         @bot.message_handler(commands=['stop']) # Emergency STOP
         def command_stop(message):
@@ -2002,25 +2057,7 @@ while True:
                 global stop
                 stop = True
 
-
-        def database_connection():
-            global connection
-            connection = pymysql.connect(host=cnf.mysql['host'],
-                                            user=cnf.mysql['user'],
-                                            password=cnf.mysql['password'],
-                                            db=cnf.mysql['db'],
-                                            charset=cnf.mysql['charset'],
-                                            cursorclass=pymysql.cursors.DictCursor)
-
-        def testing(message):
-            chat_id = message.chat.id
-            if chat_id != cnf.admin_id and testingMode == True:
-                bot.send_message(chat_id, u'\U0001F6B7'+' Sorry @' + message.from_user.username + '!, I\'m working on improving this Bot! It\'ll be able soon! (:')
-                return False
-            else:
-                return True
-
-        bot.polling(none_stop=True)       # E iniciamos nuestro bot para que esté atento a los mensajes
+        bot.polling(none_stop=True)
 
     except Exception as e:
         try:
