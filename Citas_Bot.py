@@ -36,14 +36,14 @@ def listener(messages):
         from_id = m.from_user.id
         if m.chat.type == "private":
             if m.content_type == "text":
-                print('(' + str(time.strftime('%H:%M')) + ')[' + str(chat_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
+                print('(' + str(time.strftime('%d/%m/%Y %H:%M')) + ')[' + str(chat_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
             else:
-                print('(' + str(time.strftime('%H:%M')) + ')[' + str(chat_id) + ']: ' + "\""+m.content_type+"\"")
+                print('(' + str(time.strftime('%d/%m/%Y %H:%M')) + ')[' + str(chat_id) + ']: ' + "\""+m.content_type+"\"")
         else:
             if m.content_type == "text":
-                print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
+                print('(' + str(time.strftime('%d/%m/%Y %H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + str(actText.encode('ascii', 'backslashreplace'))[2:-1])
             else:
-                print('(' + str(time.strftime('%H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + "\""+m.content_type+"\"")
+                print('(' + str(time.strftime('%d/%m/%Y %H:%M')) + '){' + str(chat_id) + '}[' + str(from_id) + ']: ' + "\""+m.content_type+"\"")
  
 bot.set_update_listener(listener)
 
