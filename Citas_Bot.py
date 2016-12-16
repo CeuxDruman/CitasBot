@@ -61,7 +61,10 @@ def database_connection():
 def testing(message):
     chat_id = message.chat.id
     if chat_id != cnf.admin_id and testingMode == True:
-        bot.send_message(chat_id, u'\U0001F6B7'+' Sorry @' + message.from_user.username + '!, I\'m working on improving this Bot! It\'ll be able soon! (:')
+        if message.from_user.username:
+            bot.send_message(chat_id, u'\U0001F6B7'+' ¡Lo siento @' + message.from_user.username + ', ahora mismo estoy mejorando el bot! Estará disponible en breve (:')
+        else:
+            bot.send_message(chat_id, u'\U0001F6B7'+' ¡Lo siento ' + message.from_user.first_name + ', ahora mismo estoy mejorando el bot! Estará disponible en breve (:')
         return False
     else:
         return True
@@ -271,8 +274,12 @@ while True:
         def command_start(message):
             if testing(message):
                 chat_id = message.chat.id
-                from_username = message.from_user.username
-                reply = "¡Hola @"+from_username+", empezamos cuando quieras! Si no sabes por dónde empezar usa el comando /ayuda"
+                if message.from_user.username:
+                    from_username = message.from_user.username
+                    reply = "¡Hola @"+from_username+", empezamos cuando quieras! Si no sabes por dónde empezar usa el comando /ayuda"
+                else:
+                    first_name = message.from_user.first_name
+                    reply = "¡Hola "+first_name+", empezamos cuando quieras! Si no sabes por dónde empezar usa el comando /ayuda"
                 bot.reply_to(message, reply)
     
         @bot.message_handler(commands=['ayuda'])
@@ -962,7 +969,7 @@ while True:
             try:
                 if testing(message): #and session(message):
                     chat_id = message.chat.id
-                    from_username = message.from_user.username
+                    #from_username = message.from_user.username
 
                     #sql = "UPDATE session SET session="+str(1)+" WHERE user="+from_id
                     #with connection.cursor() as cursor:
@@ -1250,7 +1257,7 @@ while True:
         def process_interesado_step(message):
             try:
                 chat_id = message.chat.id
-                from_username = message.from_user.username
+                #from_username = message.from_user.username
                 if chat_id in operation_dict:
                 
                     interesado = message.text
