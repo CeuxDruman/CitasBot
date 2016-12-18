@@ -116,9 +116,9 @@ def alarmaDia():
                     else:
                         acompanantes = str(row['acompanantes'])
 
-                    if len(row['creador']) > 8:
+                    if row['creador'].startswith('-'):  # Si la cita pertenece a un grupo, supergrupo o canal
                         reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
-                    else:
+                    else:                               # Si pertenece a un usuario (chat privado)
                         reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita para " + u"\U0001F4C5" + " mañana!:</b>\n\n"
                     reply += ("Número de cita: <b>" + str(row['id']) + "</b>\n"
                         "Día: <b>" + row['dia'].strftime("%d/%m/%Y") + "</b>\n"
@@ -185,7 +185,7 @@ def alarmaHora():
                     else:
                         acompanantes = str(row['acompanantes'])
 
-                    if len(row['creador']) > 8:
+                    if row['creador'].startswith('-'):
                         reply = u"\U000023F0" + " <b>¡No olvidéis que tenéis programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
                     else:
                         reply = u"\U000023F0" + " <b>¡No olvides que tienes programada esta cita " + u"\U0001F551" + " dentro de una hora!:</b>\n\n"
