@@ -149,8 +149,7 @@ def alarmaDia():
             connection.close()
 
     except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaDia\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+        print(str(e))
 
 def alarmaHora():
     try:
@@ -218,8 +217,7 @@ def alarmaHora():
             connection.close()
 
     except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        bot.send_message(cnf.admin_id, 'Algo está fallando con la alarmaHora\n'+str(e)+"\n"+str(exc_tb.tb_lineno))#\n'+str(e))
+        print(str(e))
 
 
 while True:
